@@ -37,7 +37,10 @@ import curses
 from platform import uname
 import numpy as np
 import matplotlib.pyplot as plt
-
+import pysftp
+import getpass
+import sqlite3
+import subprocess
 
 EXTERNAL_MODE = 'E'
 INTERNAL_MODE = 'I'
@@ -51,13 +54,33 @@ class WattsUp(object):
             self.s = open(port,'r')     # not a serial port, but a file
         else:
             self.s = serial.Serial(port, 115200 )
+        if args.web:
+            self.webserver = True
+        else: 
+	    self.webserver = None
         self.logfile = None
+        self.machine_file = 'Readings/' + uname()[1]
         self.interval = interval
         # initialize lists for keeping data
         self.t = []
         self.power = []
         self.potential = []
         self.current = []
+        self.tests = {0 : 'avrora',
+		1 : 'batik',
+		2 : 'eclipse',
+		3 : 'fop',
+		4 : 'h2',
+		5 : 'jython',
+		6 : 'luindex',
+		7 : 'lusearch',
+		8 : 'pmd',
+		9 : 'sunflow',
+		10 : 'tomcat',
+		11 : 'tradebeans',
+		12 : 'tradesoap',
+		13 : 'xalan',
+		14 : 'idle' }
 
     def mode(self, runmode):
         if args.sim:
@@ -66,24 +89,10 @@ class WattsUp(object):
         if runmode == INTERNAL_MODE:
             self.s.write('#O,W,1,%d' % FULLHANDLING)
 
-    def fetch(self):
-        if args.sim:
-            return                      # can't fetch while in simulation
-        for line in self.s:
-            if line.startswith( '#d' ):
-                fields = line.split(',')
-                W = float(fields[3]) / 10;
-                V = float(fields[4]) / 10;
-                A = float(fields[5]) / 1000;
-                print datetime.datetime.now(), W, V, A
-
-    def log(self, logfile = None):
-        print 'Logging...'
+    def benchmark(self, logfile = None):
+        print 'Running Benchmarks...'
         if not args.sim:
             self.mode(EXTERNAL_MODE)
-        if logfile:
-            self.logfile = logfile
-            o = open(self.logfile,'w')
         if args.raw:
             rawfile = '.'.join([os.path.splitext(self.logfile)[0],'raw'])
             try:
@@ -92,7 +101,6 @@ class WattsUp(object):
                 print 'Opening raw file %s failed!' % rawfile
                 args.raw = False
         line = self.s.readline()
-        n = 0
         # set up curses
         screen = curses.initscr()
         curses.noecho()
@@ -102,56 +110,71 @@ class WattsUp(object):
             curses.curs_set(0)
         except:
             pass
-        if args.plot:
-            fig = plt.figure()
-        while True:
-            if args.sim:
-                time.sleep(self.interval)
-            if line.startswith( '#d' ):
-                if args.raw:
-                    r.write(line)
-                fields = line.split(',')
-                if len(fields)>5:
-                    W = float(fields[3]) / 10;
-                    V = float(fields[4]) / 10;
-                    A = float(fields[5]) / 1000;
-                    screen.clear()
-                    screen.addstr(2, 4, 'Logging to file %s' % self.logfile)
-                    screen.addstr(4, 4, 'Time:     %d s' % n)
-                    screen.addstr(5, 4, 'Power:   %3.1f W' % W)
-                    screen.addstr(6, 4, 'Voltage: %5.1f V' % V)
-                    if A<1000:
-                        screen.addstr(7, 4, 'Current: %d mA' % int(A*1000))
-                    else:
-                        screen.addstr(7, 4, 'Current: %3.3f A' % A)
-                    screen.addstr(9, 4, 'Press "q" to quit ')
-                    #if args.debug:
-                    #    screen.addstr(12, 0, line)
-                    screen.refresh()
-                    c = screen.getch()
-                    if c in (ord('q'), ord('Q')):
-                        break  # Exit the while()
-                    if args.plot:
-                        self.t.append(float(n))
-                        self.power.append(W)
-                        self.potential.append(V)
-                        self.current.append(A)
-                        fig.clear()
-                        plt.plot(np.array(self.t)/60,np.array(self.power),'r')
-                        ax = plt.gca()
-                        ax.set_xlabel('Time (minutes)')
-                        ax.set_ylabel('Power (W)')
-                        # show the plot
-                        fig.canvas.draw()
-                    if self.logfile:
-                        o.write('%s %d %3.1f %3.1f %5.3f\n' % (datetime.datetime.now(), n, W, V, A))
-                    n += self.interval
-            line = self.s.readline()
+        for x in range(0, 15):
+            time.sleep(2)
+            n = 0
+            test = self.tests[x]
+            self.logfile = "Readings/" + test
+            dacapo = 'dacapo-9.12-bach.jar'
+            proc = None
+            pid = None
+            pid_path = None
+            try:
+                 fd = open(self.logfile, "w")
+            except:
+                 print 'Failed to open %s, will not log to file.' % self.logfile
+                 self.logfile = False
+            if x != 14:
+                try:
+                    proc = subprocess.Popen(['java', '-jar', dacapo, test])
+                except:
+                    print 'Failed to launch benchmark %s. Moving on to %s.' % (test, self.testss[x+1])
+                    continue
+                pid = proc.pid
+                pid_path = '/proc/' + str(pid)
+            else:                
+                pid = os.getpid()
+                pid_path = '/proc/' + str(pid)
+            while os.path.exists(pid_path) and self.procStatus(pid):
+                if args.sim:
+                    time.sleep(self.interval)
+                if line.startswith( '#d' ):
+                    if args.raw:
+                        r.write(line)
+                    fields = line.split(',')
+                    if len(fields)>5:
+                        W = float(fields[3]) / 10;
+                        V = float(fields[4]) / 10;
+                        A = float(fields[5]) / 1000;
+                        screen.clear()
+                        screen.addstr(2, 4, 'Running test: %s, path: %s' % (test, pid_path))
+                        screen.addstr(4, 4, 'Time:     %d s' % n)
+                        screen.addstr(5, 4, 'Power:   %3.1f W' % W)
+                        screen.addstr(6, 4, 'Voltage: %5.1f V' % V)
+                        screen.addstr(8, 4, 'Loop iteration: %d' % x)
+                        if A<1000:
+                            screen.addstr(7, 4, 'Current: %d mA' % int(A*1000))
+                        else:
+                            screen.addstr(7, 4, 'Current: %3.3f A' % A)
+                        screen.addstr(10, 4, 'Press "s" to end current test ')
+                        screen.addstr(11, 4, 'Press "q" to quit test sequence \n\n')
+                        screen.refresh()
+                        c = screen.getch()
+                        if c in (ord('s'), ord('S')):
+                            if x != 14:
+                                proc.kill()
+                            break  # Exit the while()
+                        if self.logfile:
+                            fd.write('%s %d %3.1f %3.1f %5.3f\n' % (datetime.datetime.now(), n, W, V, A))
+                        if x == 14 and n >= 30:
+                            break
+                        n += self.interval
+                line = self.s.readline()
         curses.nocbreak()
         curses.echo()
         curses.endwin()
         try:
-            o.close()
+            fd.close()
         except:
             pass
         if args.raw:
@@ -159,6 +182,134 @@ class WattsUp(object):
                 r.close()
             except:
                 pass
+
+    def record(self):
+        conn = sqlite3.connect('Databases/records.db')
+        cursor = conn.cursor()
+        for x in range(0, 15):
+           total_watts = 0
+           peak_watts = 0
+           end_time = None
+           peak_current = 0
+           peak_voltage = 0       
+           test_name = self.tests[x]
+           test_file = 'Readings/' + test_name
+           try:
+               fd = open(test_file, 'r')
+           except:
+               print "Couldn't open file %s, cannot record", test_file
+           i = 0
+           for l in fd:
+               l = l.rstrip()
+               values = l.split(" ")
+               total_watts += float(values[3])
+               if float(values[3]) > peak_watts:
+                   peak_watts = float(values[3])
+               if float(values[4]) > peak_voltage:
+                   peak_voltage = float(values[4])
+               if float(values[5]) > peak_current:
+                   peak_current = float(values[5])
+               if i == 0:
+                   temp_start_time = values[0] + ' ' + values[1]
+               i += 1
+           start_time = datetime.datetime.strptime(temp_start_time, '%Y-%m-%j %H:%M:%S.%f')
+           temp_end_time = values[0] + ' ' + values[1]
+           end_time = datetime.datetime.strptime(temp_end_time, '%Y-%m-%j %H:%M:%S.%f')
+           fd.close()
+           time_elapsed = end_time - start_time
+           start_time = str(start_time)
+           end_time = str(end_time)
+           cursor.execute("""INSERT INTO instances (test_name, time_started, time_completed, time_elapsed,
+				total_wattage, peak_wattage, peak_current, peak_voltage) VALUES
+				(?, ?, ?, ?, ?, ?, ?, ?, ?)""", (test_name, str(start_time), str(end_time), str(time_elapsed),
+			        total_watts, peak_watts, peak_current, peak_voltage))
+        conn.commit()
+        conn.close()
+
+    def average(self):
+        conn = sqlite3.connect('Databases/records.db')
+        cursor = conn.cursor()
+        try:
+            fd = open(self.machine_file, 'w')
+        except:
+            print 'Could not open file %s'
+            self.machine_file = None
+        for x in range(0, 15):
+            test_name = self.tests[x]
+            avg_elapsed_time = datetime.datetime.strptime('00:00:00.00', '%H:%M:%S.%f')
+            avg_total_watts = 0
+            avg_peak_watts = 0
+            avg_peak_current = 0
+            avg_peak_voltage = 0
+            cursor.execute("Select * FROM instances WHERE test_name=?", (test_name,))
+            if not cursor.rowcount == 0:
+                records = cursor.fetchall()
+                i = 0
+                for record in records:
+                    temp_time = datetime.datetime.strptime(record[4], '%H:%M:%S.%f')
+                    avg_elapsed_time += temp_time;
+                    avg_total_watts += float(record[5])
+                    avg_peak_watts += float(record[6])
+                    avg_peak_current += float(record[7])
+                    avg_peak_voltage += float(record[8])
+                    i += 1
+                avg_elapsed_time = (avg_elapsed_time / i)
+                avg_total_watts = (avg_total_watts / i)
+                avg_peak_watts = (avg_peak_watts / i)
+                avg_peak_current = (avg_peak_current / i)
+                avg_peak_voltage = (avg_peak_voltage / i)
+            cursor.execute("SELECT * FROM averages WHERE test_name=?", (test_name,))
+            if cursor.fetchall() is None:
+                cursor.execute("""UPDATE averages SET avg_time_elapsed=?, avg_total_wattage=?, avg_peak_wattage=?,
+				avg_peak_current=?, avg_peak_voltage=?  WHERE test_name=?""",
+				(avg_elapsed_time, avg_total_watts, avg_peak_watts, avg_peak_current, avg_peak_voltage, test_name))
+            else:
+                cursor.execute("""INSERT INTO averages (test_name, avg_time_elapsed, avg_total_wattage, avg_peak_wattage,
+				avg_peak_current, avg_peak_voltage) VALUES (?, ?, ?, ?, ?, ?, ?)""", 
+				(test_name, avg_elapsed_time, avg_total_watts, avg_peak_watts, avg_peak_current, avg_peak_voltage))
+            if self.machine_file:
+                fd.write('%s %s %3.1f %3.1f %5.3f %3.1f %3.1f\n' % (test_name, avg_elapsed_time, avg_total_watts, avg_peak_watts, avg_peak_current, avg_peak_voltage))
+        conn.commit()
+        conn.close()
+        try:
+            fd.close()
+        except:
+            pass
+
+    def transfer(self, passwrd):
+        try:
+            sftp = pysftp.Connection("harvey2.cc.binghamton.edu", username="rsmith23", password=passwrd)
+        except:
+            print "Failed to connect to web server."
+            self.webserver = None
+        if self.webserver:
+            info = uname()
+            sftp.cwd('public_html/Readings');
+            if not sftp.isdir(info[1]):
+                sftp.mkdir(info[1], mode=644)
+            sftp.cwd(info[1])
+            for i in range(0, 15):
+                test_file = 'Readings/' + self.tests[i]
+                try:
+                    sftp.put(test_file)
+                except:
+                    print 'Failed to transfer file'
+            machine_file = 'Readings/' + info[1]
+            sftp.put(machine_file)
+        try:
+            sftp.close()
+        except:
+            pass
+
+    #Returns False if process is a zombie, otherwise True
+    def procStatus(self, pid):
+        for line in open("/proc/%d/status" % pid).readlines():
+            if line.startswith("State:"):
+                values = line.split(":", 1)[1].strip().split(' ')[0]
+                if values[0] == 'Z':
+                    return False
+                else:
+                    return True
 
 def main(args):
     if not args.port:
@@ -179,14 +330,31 @@ def main(args):
         else:
             print ''
             print 'File %s does not exist.' % args.port
+    if args.web:
+         passwd = getpass.getpass('Webserver password: ')
     meter = WattsUp(args.port, args.interval)
-    if args.log:
-        meter.log(args.outfile)
-    if args.fetch:
-        print 'WARNING: Fetch mode not working!!!!'
-        meter.fetch()
+    if args.bench:
+        createDB();
+        meter.benchmark(args.outfile)
+        meter.record()
+        meter.average()
+    if args.web:
+         meter.transfer(passwd)
     if args.internal:
         meter.mode(INTERNAL_MODE)
+
+def createDB():
+    conn = sqlite3.connect(r"Databases/records.db")
+    cursor = conn.cursor()
+    cursor.execute('''CREATE TABLE if NOT EXISTS instances (id INTEGER PRIMARY KEY, test_name TEXT,
+			 time_started TEXT, time_completed TEXT, time_elapsed TEXT, 
+			total_wattage REAL, peak_wattage REAL, peak_current REAL, 
+			peak_voltage REAL)''')
+    cursor.execute('''CREATE TABLE if NOT EXISTS averages (id INTEGER PRIMARY KEY, test_name TEXT, 
+		avg_time_elapsed REAL, avg_total_wattage REAL, avg_peak_wattage REAL, 
+		avg_peak_current REAL, avg_peak_voltage REAL)''')
+    conn.commit()
+    conn.close()
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Get data from Watts Up power meter.')
@@ -194,12 +362,12 @@ if __name__ == '__main__':
     parser.add_argument('-d', '--debug', dest='debug', action='store_true', help='debugging output')
     parser.add_argument('-m', '--simulation-mode', dest='sim', action='store_true', help='simulate logging by reading serial data from disk with delay of sample interval between lines')
     parser.add_argument('-i', '--internal-mode', dest='internal', action='store_true', help='Set meter to internal logging mode')
-    parser.add_argument('-f', '--fetch', dest='fetch', action='store_true', help='Fetch data stored on the meter (NOT YET WORKING!)')
-    parser.add_argument('-g', '--graphics-mode', dest='plot', action='store_true', help='Graphical output: plot the data in real time')
     parser.add_argument('-l', '--log', dest='log', action='store_true', help='log data in real time')
     parser.add_argument('-r', '--raw', dest='raw', action='store_true', help='output raw file')
     parser.add_argument('-o', '--outfile', dest='outfile', default='log.out', help='Output file')
     parser.add_argument('-s', '--sample-interval', dest='interval', default=1.0, type=float, help='Sample interval (default 1 s)')
     parser.add_argument('-p', '--port', dest='port', default=None, help='USB serial port')
+    parser.add_argument('-w', '--weblog', dest='web', action='store_true', default=None, help='log data to webserver')
+    parser.add_argument('-b', '--benchmark', dest='bench', action='store_true', default=None, help='Run and record Dacapo')
     args = parser.parse_args()
     main(args)

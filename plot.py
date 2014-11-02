@@ -32,7 +32,9 @@ Time-stamp: <Fri Sep  2 17:11:38 EDT 2011>
 
 import sys, os
 import numpy as np
-from matplotlib import dates, pyplot
+from PyQt4.QtCore import *
+from PyQt4.QtGui import *
+from matplotlib import dates, pyplot, widgets
 
 def main():
     if len(sys.argv) < 2:
@@ -85,6 +87,7 @@ def main():
     
     # open interactive shell
     #ipshell()
+
 
 if __name__ == '__main__':
     main()
