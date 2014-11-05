@@ -1,90 +1,170 @@
-#!/usr/bin/env python
-# -*- coding: iso-8859-15 -*-
-"""
-Plot data from WattsUp power meter
-
-Format is assumed to be space sperated containing:
-YYYY-MM-DD HH:MM:SS.ssssss n W V A
-where n is sample number, W is power in Watts, V volts, A current in amps
-
-Usage: plot.py log.out [plot.png]
-
-Requires numpy and matplotlib
-
-Author: Kelsey Jordahl
-Copyright: Kelsey Jordahl 2011
-License: GPLv3
-Time-stamp: <Fri Sep  2 17:11:38 EDT 2011>
-
-    This program is free software: you can redistribute it and/or
-    modify it under the terms of the GNU General Public License as
-    published by the Free Software Foundation, either version 3 of the
-    License, or (at your option) any later version.  A copy of the GPL
-    version 3 license can be found in the file COPYING or at
-    <http://www.gnu.org/licenses/>.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-"""
+#! /usr/bin/env python
 
 import sys, os
+from PyQt4.QtCore import *
+from PyQt4.QtGui import *
 import numpy as np
-from matplotlib import dates, pyplot
+from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
+import matplotlib.pyplot as plt
+
+class PlotForm(QMainWindow):
+    def __init__(self, parent=None):
+        QMainWindow.__init__(self, parent)
+        self.setWindowTitle('Watts Up Logger Plot Utility')
+        self.final = []
+        self.names = []
+
+        self.create_menu()
+        self.create_main_frame()
+        self.create_status_bar()
+
+    def save_plot(self):
+        file_options = "PNG (*.png)|*.png"
+        path = unicode(QFileDialog.getSaveFileName(self, 
+            'Save file', 'image', file_options))
+        if path:
+            self.canvas.print_figure(path, dip=self.dpi)
+            self.statusBar().showMessage("Saved to %s" % path, 2000)
+
+    def on_pick(self, event):
+        if isinstance(event.artist ,Line2D):
+            thisline = event.artist
+            msg = "You've selected: \n %s" % line_points
+            QMessageBox.information(self, "Click!", msg)
+	    print "Pick event called, line 2D"
+
+    def draw_plot(self):
+        self.figure.clf()
+        self.ax = self.figure.add_subplot(111)
+        self.canvas.mpl_connect('pick_event', self.on_pick)
+        self.ax.grid(self.grid_cb.isChecked())
+	lines = []
+	for entry in self.final:
+            line, = self.ax.plot(*entry, picker=True)
+            lines.append(line)
+        self.ax.hold(False)
+	self.ax.set_title("Energy Data")
+        self.ax.set_xlabel("Time (minutes)")
+        self.ax.set_ylabel("Power (w)")
+        self.ax2 = self.ax.twinx()
+        clim = plt.get(self.ax, 'ylim')
+        self.ax2.set_ylim(clim[0]*1000/120, clim[1]*1000/120)
+        self.ax2.set_ylabel("Current (mA)")
+ 
+        for i in range(0, len(lines)):
+            lines[i].set_label(self.names[i])
+        handles, labels = self.ax.get_legend_handles_labels()
+        self.ax.legend(handles, labels)
+        self.canvas.draw()
+
+    def create_main_frame(self):
+        self.main_frame = QWidget()
+
+        self.dpi = 100
+        self.figure = plt.figure(dpi=self.dpi)
+        self.canvas = FigureCanvas(self.figure)
+        self.canvas.setParent(self.main_frame)
+       	self.toolbar = NavigationToolbar(self.canvas, self.main_frame)
+
+        self.add_log_button = QPushButton("&Add Log")
+        self.add_log_button.setFixedWidth(150)
+        self.add_log_button.clicked.connect(self.add_log)
+        self.clear_plot_button = QPushButton("&Clear Plot")
+        self.clear_plot_button.setFixedWidth(150)
+        self.clear_plot_button.clicked.connect(self.clear_plot)
+        self.grid_cb = QCheckBox("Show &Grid")
+        self.grid_cb.setChecked(False)
+        self.connect(self.grid_cb, SIGNAL('stateChanged(int)'), self.draw_plot)
+
+        hbox = QHBoxLayout()
+        hbox.addWidget(self.add_log_button)
+        hbox.addWidget(self.clear_plot_button)
+        hbox.addWidget(self.grid_cb)
+
+        vbox = QVBoxLayout()
+        vbox.addWidget(self.canvas)
+        vbox.addWidget(self.toolbar)
+        vbox.addLayout(hbox)
+
+        self.main_frame.setLayout(vbox)
+        self.setCentralWidget(self.main_frame)
+
+    def add_log(self):
+        files = QFileDialog.getOpenFileNames(self.main_frame,
+            "Select one or more files to open",)
+        if files:
+            data = []
+            input_files = map(str, files)
+            for f in input_files:
+                read = unicode(f)
+                temp = np.genfromtxt(read, usecols = (2, 3, 4, 5)).tolist()
+                data.append(temp)
+                self.names.append(os.path.basename(f))
+            for item in data:
+                t = []
+                w = []
+                for row in item:
+                    t.append((row[0] / 60))
+                    w.append(row[1])
+                self.final.append([t, w])
+            self.draw_plot()
+        self.statusBar().showMessage("Added new logs to subplot")
+
+    def clear_plot(self):
+        if self.final:
+            self.final = []
+            self.figure.delaxes(self.ax)
+            self.figure.delaxes(self.ax2)
+            self.canvas.draw()
+
+    def create_menu(self):
+        self.file_menu = self.menuBar().addMenu("&File")
+        save_file_action = self.create_action("&Save plot",
+	    shortcut="Ctrl+S", slot=self.save_plot,
+            tip="Save the plot")
+        open_file_action = self.create_action("&Add log",
+            shortcut="Ctrl+O", slot=self.add_log,
+            tip="Add log to subplot")
+        quit_action = self.create_action("&Quit", 
+            shortcut="Ctrl+Q", tip="Close the app")
+
+        self.add_actions(self.file_menu,
+            (save_file_action, open_file_action, None, quit_action))
+
+    def create_status_bar(self):
+        self.status_text = QLabel("Logger Plot")
+        self.statusBar().addWidget(self.status_text, 1)
+
+    def add_actions(self, target, actions):
+        for action in actions:
+            if action is None:
+                target.addSeparator()
+            else:
+                target.addAction(action)
+
+    def create_action(self, text, slot=None, shortcut=None, 
+                        icon=None, tip=None, checkable=False, 
+                        signal="triggered()"):
+        action = QAction(text, self)
+        if icon is not None:
+            action.setIcon(QIcon(":/%s.png" % icon))
+        if shortcut is not None:
+            action.setShortcut(shortcut)
+        if tip is not None:
+            action.setToolTip(tip)
+            action.setStatusTip(tip)
+        if slot is not None:
+            self.connect(action, SIGNAL(signal), slot)
+        if checkable:
+            action.setCheckable(True)
+        return action
 
 def main():
-    if len(sys.argv) < 2:
-        logfilename = 'log.out'         # use default filename
-	print 'No input filename specified: using %s' % logfilename
-    else:
-        logfilename = sys.argv[1]
-    if not os.path.exists(logfilename):
-        print '%s does not exist!' % logfilename
-        sys.exit()
-    else:
-        print 'Reading file %s' % logfilename
-    if len(sys.argv) < 3:
-        pngfilename = None
-	print 'No output filename specified: will not write output file for plot'
-    else:
-        pngfilename = sys.argv[2]
-        print 'Plot will be saved as %s' % pngfilename
-    data = np.genfromtxt(logfilename, usecols = (2, 3, 4, 5))
-    t = data[:,0]
-    w = data[:,1]
-    i = data[:,3]
-    pyplot.plot(t/60,w)
-    ax = pyplot.gca()
-    ax.set_xlabel('Time (minutes)')
-    ax.set_ylabel('Power (W)')
-    ax2 = ax.twinx()
-    clim = pyplot.get(ax,'ylim')
-    ax2.set_ylim(clim[0]*1000/120,clim[1]*1000/120)
-    ax2.set_ylabel('Current (mA)')
-    # generate a PNG file
-    if pngfilename:
-        pyplot.savefig(pngfilename)
-    # show the plot
-    pyplot.show()
-
-    # cumulative plot
-    pyplot.plot(t/60,np.cumsum(w)/1000)
-    ax = pyplot.gca()
-    ax.set_xlabel('Time (minutes)')
-    ax.set_ylabel('Energy (kJ)')
-    ax2 = ax.twinx()
-    clim = pyplot.get(ax,'ylim')
-    ax2.set_ylim(clim[0]/3.6,clim[1]/3.6)
-    ax2.set_ylabel('Energy (Wh)')
-    if pngfilename:
-        pyplot.savefig('energy.png')
-    # show the plot
-    pyplot.show()
-    
-    # open interactive shell
-    #ipshell()
+    app = QApplication(sys.argv)
+    form = PlotForm()
+    form.show()
+    app.exec_()
 
 if __name__ == '__main__':
     main()
