@@ -1,51 +1,43 @@
-'''
-    Socket server testing with threads
-'''
-
+#!/usr/bin/env python
+#Socket server using select
 import socket
-import sys
-from thread import *
+import select
 
-HOST = ''
-PORT = 8888
+if __name__ == "__main__":
 
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-print 'Socket Created'
+    CONNECTION_LIST = []
+    RECV_BUFFER = 1024
+    PORT = 44000
 
-#Binding the socket to the local host and port
-try:
-    s.bind((HOST, PORT))
-except socket.error as msg:
-    print 'Bind failed. Error Code : ' + str(msg[0]) + ' Message ' + msg[1]
-    sys.exit()
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    server_socket.bind(("0.0.0.0", PORT))
+    server_socket.listen(5)
 
-print 'Socket bind complete'
+    #add the socket to the connections list
+    CONNECTION_LIST.append(server_socket)
 
-#Start listening
-s.listen(10)
-print 'Socket now listening'
+    #possible print, see where to print for daemon service
 
-#for handling each connectiong
-def client_thread(conn):
-    #send message to client
-    #send only takes a string
-    conn.send('Welcome to the server. Tpye something and hit enter\n')
     while True:
-        data = conn.recv(1024)
-        reply = 'Ok...' + data
-        if not data:
-            break
+        read_sockets, write_sockets, error_sockets = \
+                        select.select(CONNECTION_LIST,[],[])
 
-        conn.sendall(reply)
-
-    conn.close()
-
-#now to talk with client
-while 1:
-    #wait for a connection
-    conn, addr = s.accept()
-    print 'Connected with ' + addr[0] + ':' + str(addr[1])
-
-    start_new_thread(client_thread, (conn,))
-
-s.close()
+        for sock in read_sockets:
+            #new client
+            if sock == server_socket:
+                sockfd, addr = server_socket.accept()
+                CONNECTION_LIST.append(sockfd)
+            #incoming message
+            else:
+                try:
+                    data = sock.recv(RECV_BUFFER)
+                    #here need to parse data and execute
+                    if data:
+                        sock.send('Ok...' + data)
+                except:
+                    sock.close()
+                    CONNECTION_LIST.remove(sock)
+                    continue
+    server_socket.shutdown()
+    server_socket.close()
