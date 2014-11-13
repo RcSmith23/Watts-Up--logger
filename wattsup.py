@@ -138,7 +138,7 @@ class WattsUp(object):
                     pid_path = '/proc/' + str(pid)
                 else:
                     try:
-                        proc = subprocess.Popen(['java', '-jar', dacapo, self.tests[1])
+                        proc = subprocess.Popen(['java', '-jar', dacapo, self.tests[1]])
                         proc2 = subprocess.Popen(['java', '-jar', dacapo, self.tests[29-x]])
                     except:
                         print 'Failed to launch double benchmarks'
