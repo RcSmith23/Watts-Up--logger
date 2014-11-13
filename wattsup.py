@@ -66,7 +66,7 @@ class WattsUp(object):
         self.power = []
         self.potential = []
         self.current = []
-        self.tests = {0 : 'avrora',
+        self.tests = {0 : 'idle',
 		1 : 'batik',
 		2 : 'eclipse',
 		3 : 'fop',
@@ -80,7 +80,7 @@ class WattsUp(object):
 		11 : 'tradebeans',
 		12 : 'tradesoap',
 		13 : 'xalan',
-		14 : 'idle' }
+		14 : 'avrora' }
 
     def mode(self, runmode):
         if args.sim:
@@ -110,32 +110,46 @@ class WattsUp(object):
             curses.curs_set(0)
         except:
             pass
-        for x in range(0, 15):
+        for x in range(0, 29):
             time.sleep(2)
             n = 0
             test = self.tests[x]
             self.logfile = "Readings/" + test
             dacapo = 'dacapo-9.12-bach.jar'
             proc = None
+            proc2 = None
             pid = None
+            pid2 = None
             pid_path = None
+            pid_path2 = None
             try:
                  fd = open(self.logfile, "w")
             except:
                  print 'Failed to open %s, will not log to file.' % self.logfile
                  self.logfile = False
-            if x != 14:
-                try:
-                    proc = subprocess.Popen(['java', '-jar', dacapo, test])
-                except:
-                    print 'Failed to launch benchmark %s. Moving on to %s.' % (test, self.testss[x+1])
-                    continue
-                pid = proc.pid
-                pid_path = '/proc/' + str(pid)
+            if x != 0:
+                if x < 15:
+                    try:
+                        proc = subprocess.Popen(['java', '-jar', dacapo, test])
+                    except:
+                        print 'Failed to launch benchmark %s. Moving on to %s.' % (test, self.testss[x+1])
+                        continue
+                    pid = proc.pid
+                    pid_path = '/proc/' + str(pid)
+                else:
+                    try:
+                        proc = subprocess.Popen(['java', '-jar', dacapo, self.tests[1])
+                        proc2 = subprocess.Popen(['java', '-jar', dacapo, self.tests[29-x]])
+                    except:
+                        print 'Failed to launch double benchmarks'
+                    pid = proc.pid
+                    pid2 = proc2.pid
+                    pid_path = '/proc/' + str(pid)
+                    pid_path2 = '/proc/' + str(pid2)
             else:                
                 pid = os.getpid()
                 pid_path = '/proc/' + str(pid)
-            while os.path.exists(pid_path) and self.procStatus(pid):
+            while True:
                 if args.sim:
                     time.sleep(self.interval)
                 if line.startswith( '#d' ):
@@ -166,8 +180,14 @@ class WattsUp(object):
                             break  # Exit the while()
                         if self.logfile:
                             fd.write('%s %d %3.1f %3.1f %5.3f\n' % (datetime.datetime.now(), n, W, V, A))
-                        if x == 14 and n >= 30:
+                        if x == 0 and n >= 30:
                             break
+                        if not os.path.exists(pid_path) or not self.procStatus(pid):
+                            if x < 15:
+                                break
+                            else:
+                                if not os.path.exists(pid_path2) or not self.procStatus(pid2):
+                                    break;
                         n += self.interval
                 line = self.s.readline()
         curses.nocbreak()
@@ -278,13 +298,13 @@ class WattsUp(object):
 
     def transfer(self, passwrd):
         try:
-            sftp = pysftp.Connection("harvey2.cc.binghamton.edu", username="rsmith23", password=passwrd)
+            sftp = pysftp.Connection("aras", username="rsmith23", password=passwrd)
         except:
             print "Failed to connect to web server."
             self.webserver = None
         if self.webserver:
             info = uname()
-            sftp.cwd('public_html/Readings');
+            sftp.cwd('Documents/Cluster');
             if not sftp.isdir(info[1]):
                 sftp.mkdir(info[1], mode=644)
             sftp.cwd(info[1])
