@@ -167,7 +167,7 @@ class WattsUp(object):
                             screen.addstr(2, 4, 'Running test: %s, path: %s' % (self.tests[x], pid_path))
                         else:
                             screen.addstr(2, 4, 'Running tests: %s and %s, paths: %s, %s' 
-                                            % (self.tests[1], self.tests[29-x], pid_path, pid_path2)
+                                            % (self.tests[1], self.tests[29-x], pid_path, pid_path2))
                         screen.addstr(4, 4, 'Time:     %d s' % n)
                         screen.addstr(5, 4, 'Power:   %3.1f W' % W)
                         screen.addstr(6, 4, 'Voltage: %5.1f V' % V)
