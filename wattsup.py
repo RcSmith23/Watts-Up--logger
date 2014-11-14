@@ -312,7 +312,7 @@ class WattsUp(object):
             info = uname()
             sftp.cwd('Documents/Cluster');
             if not sftp.isdir(info[1]):
-                sftp.mkdir(info[1], mode=644)
+                sftp.mkdir(info[1], mode=777)
             sftp.cwd(info[1])
             for i in range(0, 29):
                 if i < 15:
@@ -322,9 +322,12 @@ class WattsUp(object):
                 try:
                     sftp.put(test_file)
                 except:
-                    print 'Failed to transfer file'
+                    print 'Failed to transfer log file'
             machine_file = 'Readings/' + info[1]
-            sftp.put(machine_file)
+            try:
+                sftp.put(machine_file)
+            except:
+                print "Failed to transfer machine file."
         try:
             sftp.close()
         except:
