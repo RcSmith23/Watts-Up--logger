@@ -113,8 +113,10 @@ class WattsUp(object):
         for x in range(0, 29):
             time.sleep(2)
             n = 0
-            test = self.tests[x]
-            self.logfile = "Readings/" + test
+            if x < 15:
+                self.logfile = "Readings/" + self.tests[x]
+            else:
+                self.logfile = "Readings/" + self.tests[1] + self.tests[29-x]
             dacapo = 'dacapo-9.12-bach.jar'
             proc = None
             proc2 = None
@@ -130,9 +132,9 @@ class WattsUp(object):
             if x != 0:
                 if x < 15:
                     try:
-                        proc = subprocess.Popen(['java', '-jar', dacapo, test])
+                        proc = subprocess.Popen(['java', '-jar', dacapo, self.tests[x]])
                     except:
-                        print 'Failed to launch benchmark %s. Moving on to %s.' % (test, self.testss[x+1])
+                        print 'Failed to launch benchmark %s. Moving on to %s.' % (test, self.tests[x+1])
                         continue
                     pid = proc.pid
                     pid_path = '/proc/' + str(pid)
