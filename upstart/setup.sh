@@ -35,7 +35,7 @@ fi
 
 # Moving all daemon code to /srv/wattsup
 DACAPO="http://downloads.sourceforge.net/project/dacapobench/9.12-bach/dacapo-9.12-bach.jar"
-DIRECTORY=/srv/wattsup
+DIRECTORY=/lib/wattsup
 if [ ! -d "$DIRECTORY" ]; then
 	mkdir "$DIRECTORY" || error_exit "$LINENO: Could not create directory: $DIRECTORY"
 fi
@@ -55,6 +55,14 @@ if [ -e "wattsup.py" ]; then
 	fi
 else
 	error_exit "$LINENO: wattsup.py could not be found."
+fi
+
+if [ -e "dacapo.py" ]; then
+	if [ ! -e "$DIRECTORY/dacapo.py" ]; then
+		cp dacapo.py "$DIRECTORY"/dacapo.py || error_exit "$LINEON: Could not copy dacapo.py"
+	fi
+else
+	error_exit "$LINENO: dacapo.py could not be found."
 fi
 
 if [ -d "$DIRECTORY" ]; then

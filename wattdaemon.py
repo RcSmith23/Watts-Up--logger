@@ -7,8 +7,8 @@ import dacapo
 
 if __name__ == "__main__":
 
-    logger = WattsUp()
-    dacapo = DacapoSuite()
+    logger = wattsup.WattsUp()
+    dacapo = dacapo.DacapoSuite()
 
     CONNECTION_LIST = []
     RECV_BUFFER = 1024
@@ -33,11 +33,13 @@ if __name__ == "__main__":
             if sock == server_socket:
                 sockfd, addr = server_socket.accept()
                 CONNECTION_LIST.append(sockfd)
+                print "New client"
             #incoming message
             else:
                 try:
                     # Here need to parse data and execute
                     data = sock.recv(RECV_BUFFER)
+                    print "Message: ", data
                     data.split(" ")
                     # If length 1, checking if alive or logging
                     if data.length == 1:

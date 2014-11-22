@@ -44,12 +44,21 @@ INTERNAL_MODE = 'I'
 TCPIP_MODE = 'T'
 FULLHANDLING = 2
 
-
 class WattsUp(object):
-    def __init__(self, port, interval):
-        self.s = serial.Serial(port, 115200 )
-        self.interval = interval
+    def __init__(self, port=None, interval=None):
+        if not port:
+            system = uname()[0]
+            if system == 'Darwin':          # Mac OS X
+                port = '/dev/tty.usbserial-A1000wT3'
+            elif system == 'Linux':
+                port = '/dev/ttyUSB0'
 
+        self.meter = True
+        self.interval = 1.0 if not interval else interval
+        if os.path.isfile(port):
+            self.s = serial.Serial(port, 115200 )
+        else:
+            self.meter = False
         self.t = []
         self.power = []
         self.potential = []
@@ -224,7 +233,7 @@ class WattsUp(object):
                     return False
                 else:
                     return True
-
+'''
 def main(args):
     if not args.port:
         system = uname()[0]
@@ -257,19 +266,6 @@ def main(args):
     if args.internal:
         meter.mode(INTERNAL_MODE)
 
-def createDB():
-    conn = sqlite3.connect(r"Databases/records.db")
-    cursor = conn.cursor()
-    cursor.execute('''CREATE TABLE if NOT EXISTS instances (id INTEGER PRIMARY KEY, test_name TEXT,
-			 time_started TEXT, time_completed TEXT, time_elapsed TEXT, 
-			total_wattage REAL, peak_wattage REAL, peak_current REAL, 
-			peak_voltage REAL)''')
-    cursor.execute('''CREATE TABLE if NOT EXISTS averages (id INTEGER PRIMARY KEY, test_name TEXT, 
-		avg_time_elapsed REAL, avg_total_wattage REAL, avg_peak_wattage REAL, 
-		avg_peak_current REAL, avg_peak_voltage REAL)''')
-    conn.commit()
-    conn.close()
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Get data from Watts Up power meter.')
     parser.add_argument('-v', '--verbose', dest='verbose', action='store_true', help='verbose')
@@ -285,3 +281,4 @@ if __name__ == '__main__':
     parser.add_argument('-b', '--benchmark', dest='bench', action='store_true', default=None, help='Run and record Dacapo')
     args = parser.parse_args()
     main(args)
+'''

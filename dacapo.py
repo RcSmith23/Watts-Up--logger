@@ -27,7 +27,8 @@ class DacapoSuite(object):
 
     def run(self, tests=['avrora'], sample=None):
         if not sample:
-            #set sample for larger size
+            pass
+            #set sample for larger 
         time.sleep(self.delay)
         try:
             for test in tests:
@@ -41,12 +42,14 @@ class DacapoSuite(object):
     def running(self):
         if self.processes.length > 0:
             return True
-        else
+        else:
             return False
 
     def clean(self, success=True):
         for p in self.processes:
+            pass
             # clean up all processes
         self.processes = []
         if success:
+            pass
             # Record times in DB
