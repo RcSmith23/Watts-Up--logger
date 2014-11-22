@@ -8,6 +8,7 @@ class DacapoSuite(object):
         self.delay = 7
         self.dacapo = 'dacapo-9.12-bach.jar'
         self.times = []
+        self.processes = []
         self.suite = {0 : 'avrora',
                 1 : 'batik',
                 2 : 'eclipse',
@@ -27,9 +28,25 @@ class DacapoSuite(object):
     def run(self, tests=['avrora'], sample=None):
         if not sample:
             #set sample for larger size
-        processes = []
         time.sleep(self.delay)
         try:
             for test in tests:
-                processes << subprocess.Popen(['java', '-jarma']
+                self.processes << subprocess.Popen(['java', '-jar', 'dacapo-9.12-bach.jar', test])
+	except:
+            print 'Failed to launch all benchmarks'
+            clean(False)
         
+        clean()
+
+    def running(self):
+        if self.processes.length > 0:
+            return True
+        else
+            return False
+
+    def clean(self, success=True):
+        for p in self.processes:
+            # clean up all processes
+        self.processes = []
+        if success:
+            # Record times in DB

@@ -62,7 +62,10 @@ class WattsUp(object):
         if self.thread is None:
             self.thread_event = threading.Event()
             self.thread = threading.Thread(target=self.run)
-            self.thread.start()
+            try:
+                self.thread.start()
+            except:
+                raise Exception("Could not start thread")
 
     def stop(self):
         if self.thread is not None:
@@ -70,7 +73,7 @@ class WattsUp(object):
             if not self.thread.is_alive():
                 self.thread = None
             else:
-                print "Could not kill thread"
+                raise Exception("Could not kill thread")
 
     def run(self, stop_event):
         #Need to open up database connection first
