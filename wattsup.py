@@ -32,15 +32,12 @@ Time-stamp: <Tue Sep 20 09:14:29 EDT 2011>
 
 import os, serial
 import datetime, time
-import argparse
-import curses
 from platform import uname
 import numpy as np
-import matplotlib.pyplot as plt
-import pysftp
-import getpass
 import sqlite3
 import subprocess
+import psutil
+import threading
 
 EXTERNAL_MODE = 'E'
 INTERNAL_MODE = 'I'
@@ -50,138 +47,52 @@ FULLHANDLING = 2
 
 class WattsUp(object):
     def __init__(self, port, interval):
-        if args.sim:
-            self.s = open(port,'r')     # not a serial port, but a file
-        else:
-            self.s = serial.Serial(port, 115200 )
-        if args.web:
-            self.webserver = True
-        else: 
-	    self.webserver = None
-        self.logfile = None
-        self.machine_file = 'Readings/' + uname()[1]
+        self.s = serial.Serial(port, 115200 )
         self.interval = interval
-        # initialize lists for keeping data
+
         self.t = []
         self.power = []
         self.potential = []
         self.current = []
-        self.tests = {0 : 'avrora',
-		1 : 'batik',
-		2 : 'eclipse',
-		3 : 'fop',
-		4 : 'h2',
-		5 : 'jython',
-		6 : 'luindex',
-		7 : 'lusearch',
-		8 : 'pmd',
-		9 : 'sunflow',
-		10 : 'tomcat',
-		11 : 'tradebeans',
-		12 : 'tradesoap',
-		13 : 'xalan',
-		14 : 'idle' }
+        self.cpu = []
+        self.memory = []
+        self.thread = None
 
-    def mode(self, runmode):
-        if args.sim:
-            return                      # can't set run mode while in simulation
-        self.s.write('#L,W,3,%s,,%d;' % (runmode, self.interval) )
-        if runmode == INTERNAL_MODE:
-            self.s.write('#O,W,1,%d' % FULLHANDLING)
+    def start(self):
+        if self.thread is None:
+            self.thread_event = threading.Event()
+            self.thread = threading.Thread(target=self.run)
+            self.thread.start()
 
-    def benchmark(self, logfile = None):
-        print 'Running Benchmarks...'
-        if not args.sim:
-            self.mode(EXTERNAL_MODE)
-        if args.raw:
-            rawfile = '.'.join([os.path.splitext(self.logfile)[0],'raw'])
-            try:
-                r = open(rawfile,'w')
-            except:
-                print 'Opening raw file %s failed!' % rawfile
-                args.raw = False
+    def stop(self):
+        if self.thread is not None:
+            self.thread_event.set()
+            if not self.thread.is_alive():
+                self.thread = None
+            else:
+                print "Could not kill thread"
+
+    def run(self, stop_event):
+        #Need to open up database connection first
         line = self.s.readline()
-        # set up curses
-        screen = curses.initscr()
-        curses.noecho()
-        curses.cbreak()
-        screen.nodelay(1)
-        try:
-            curses.curs_set(0)
-        except:
-            pass
-        for x in range(0, 15):
-            time.sleep(2)
-            n = 0
-            test = self.tests[x]
-            self.logfile = "Readings/" + test
-            dacapo = 'dacapo-9.12-bach.jar'
-            proc = None
-            pid = None
-            pid_path = None
-            try:
-                 fd = open(self.logfile, "w")
-            except:
-                 print 'Failed to open %s, will not log to file.' % self.logfile
-                 self.logfile = False
-            if x != 14:
-                try:
-                    proc = subprocess.Popen(['java', '-jar', dacapo, test])
-                except:
-                    print 'Failed to launch benchmark %s. Moving on to %s.' % (test, self.testss[x+1])
-                    continue
-                pid = proc.pid
-                pid_path = '/proc/' + str(pid)
-            else:                
-                pid = os.getpid()
-                pid_path = '/proc/' + str(pid)
-            while os.path.exists(pid_path) and self.procStatus(pid):
-                if args.sim:
-                    time.sleep(self.interval)
-                if line.startswith( '#d' ):
-                    if args.raw:
-                        r.write(line)
-                    fields = line.split(',')
-                    if len(fields)>5:
-                        W = float(fields[3]) / 10;
-                        V = float(fields[4]) / 10;
-                        A = float(fields[5]) / 1000;
-                        screen.clear()
-                        screen.addstr(2, 4, 'Running test: %s, path: %s' % (test, pid_path))
-                        screen.addstr(4, 4, 'Time:     %d s' % n)
-                        screen.addstr(5, 4, 'Power:   %3.1f W' % W)
-                        screen.addstr(6, 4, 'Voltage: %5.1f V' % V)
-                        screen.addstr(8, 4, 'Loop iteration: %d' % x)
-                        if A<1000:
-                            screen.addstr(7, 4, 'Current: %d mA' % int(A*1000))
-                        else:
-                            screen.addstr(7, 4, 'Current: %3.3f A' % A)
-                        screen.addstr(10, 4, 'Press "s" to end current test ')
-                        screen.addstr(11, 4, 'Press "q" to quit test sequence \n\n')
-                        screen.refresh()
-                        c = screen.getch()
-                        if c in (ord('s'), ord('S')):
-                            if x != 14:
-                                proc.kill()
-                            break  # Exit the while()
-                        if self.logfile:
-                            fd.write('%s %d %3.1f %3.1f %5.3f\n' % (datetime.datetime.now(), n, W, V, A))
-                        if x == 14 and n >= 30:
-                            break
-                        n += self.interval
-                line = self.s.readline()
-        curses.nocbreak()
-        curses.echo()
-        curses.endwin()
-        try:
-            fd.close()
-        except:
-            pass
-        if args.raw:
-            try:
-                r.close()
-            except:
-                pass
+        n = 0
+        while not self.thread_event.is_set():
+            time.sleep(self.interval)
+            if line.startswith( '#d' ):
+                fields = line.split(',')
+                if len(fields)>5:
+                    watts = float(fields[3]) / 10;
+                    voltage = float(fields[4]) / 10;
+                    amperage = float(fields[5]) / 1000;
+                    cpu = pustil.cpu_percent()
+                    memory = psutil.virtual_memory().percent
+                    time = datetime.datetime.now()
+                        
+                    #
+                    # Where to write to database
+                    #
+            n += self.interval
+            line = self.s.readline()
 
     def record(self):
         conn = sqlite3.connect('Databases/records.db')

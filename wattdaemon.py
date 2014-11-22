@@ -5,6 +5,9 @@ import select
 
 if __name__ == "__main__":
 
+    logger = WattsUp()
+    dacapo = DacapoSuite()
+
     CONNECTION_LIST = []
     RECV_BUFFER = 1024
     PORT = 44000
@@ -32,9 +35,20 @@ if __name__ == "__main__":
             else:
                 try:
                     data = sock.recv(RECV_BUFFER)
+                    data.split(" ")
                     #here need to parse data and execute
-                    if data:
-                        sock.send('Ok...' + data)
+                    if data.length == 1:
+                        if data[0] == 'Alive':
+                            sock.send('Yes')
+                        elif data[0] == 'Log':
+                            val = 'Yes' if logger.logging else 'No'
+                            sock.send(val)
+                    elif data.length == 2:
+                        if data[0] == 'Log':
+                            if data[1] == 'Start' and not logger.logging:
+                                logger.start()
+                            elif data[1] == 'Stop' and logger.logging:
+                                logger.stop()
                 except:
                     sock.close()
                     CONNECTION_LIST.remove(sock)
