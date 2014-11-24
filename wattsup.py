@@ -66,6 +66,8 @@ class WattsUp(object):
         self.power = []
         self.potential = []
         self.current = []
+        self.cpu = []
+        self.mem = []
         self.tests = {0 : 'idle',
 		1 : 'batik',
 		2 : 'eclipse',
