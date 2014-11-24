@@ -216,6 +216,7 @@ class WattsUp(object):
                         M = psutil.virtual_memory()[2]
                         if self.logfile:
                             fd.write('%s %d %3.1f %3.1f %5.3f %3.1f %3.1f\n' % (datetime.datetime.now(), n, W, V, A, C, M))
+                line = self.s.readline()
         curses.nocbreak()
         curses.echo()
         curses.endwin()
