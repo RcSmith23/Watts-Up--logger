@@ -114,7 +114,9 @@ class WattsUp(object):
         except:
             pass
         for x in range(0, 29):
-            time.sleep(10)
+            for y in range(0, 10):
+                time.sleep(1)
+                line = self.s.readline()
             n = 0
             if x < 15:
                 self.logfile = "Readings/" + self.tests[x]
