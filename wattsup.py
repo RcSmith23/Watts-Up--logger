@@ -41,6 +41,7 @@ import pysftp
 import getpass
 import sqlite3
 import subprocess
+import psutil
 
 EXTERNAL_MODE = 'E'
 INTERNAL_MODE = 'I'
@@ -113,7 +114,7 @@ class WattsUp(object):
         except:
             pass
         for x in range(0, 29):
-            time.sleep(2)
+            time.sleep(10)
             n = 0
             if x < 15:
                 self.logfile = "Readings/" + self.tests[x]
@@ -131,6 +132,7 @@ class WattsUp(object):
             except:
                  print 'Failed to open %s, will not log to file.' % self.logfile
                  self.logfile = False
+            
             if x != 0:
                 if x < 15:
                     try:
@@ -164,6 +166,8 @@ class WattsUp(object):
                         W = float(fields[3]) / 10;
                         V = float(fields[4]) / 10;
                         A = float(fields[5]) / 1000;
+                        C = psutil.cpu_percent()
+                        M = psutil.virtual_memory()[2]
                         screen.clear()
                         if x < 15:
                             screen.addstr(2, 4, 'Running test: %s, path: %s' % (self.tests[x], pid_path))
@@ -187,7 +191,7 @@ class WattsUp(object):
                                 proc.kill()
                             break  # Exit the while()
                         if self.logfile:
-                            fd.write('%s %d %3.1f %3.1f %5.3f\n' % (datetime.datetime.now(), n, W, V, A))
+                            fd.write('%s %d %3.1f %3.1f %5.3f %3.1f %3.1f\n' % (datetime.datetime.now(), n, W, V, A, C, M))
                         if x == 0 and n >= 30:
                             break
                         if not os.path.exists(pid_path) or not self.procStatus(pid):
@@ -196,8 +200,22 @@ class WattsUp(object):
                             else:
                                 if not os.path.exists(pid_path2) or not self.procStatus(pid2):
                                     break;
-                        n += self.interval
+                        n += self.interval                      
                 line = self.s.readline()
+            for i in range(0, 10):
+                time.sleep(1)
+                if line.startswith( '#d' ):
+                    if args.raw:
+                        r.write(line)
+                    fields = line.split(',')
+                    if len(fields)>5:
+                        W = float(fields[3]) / 10;
+                        V = float(fields[4]) / 10;
+                        A = float(fields[5]) / 1000;
+                        C = psutil.cpu_percent()
+                        M = psutil.virtual_memory()[2]
+                        if self.logfile:
+                            fd.write('%s %d %3.1f %3.1f %5.3f %3.1f %3.1f\n' % (datetime.datetime.now(), n, W, V, A, C, M))
         curses.nocbreak()
         curses.echo()
         curses.endwin()
@@ -368,10 +386,10 @@ def main(args):
          passwd = getpass.getpass('Webserver password: ')
     meter = WattsUp(args.port, args.interval)
     if args.bench:
-        createDB();
+        #createDB();
         meter.benchmark(args.outfile)
-        meter.record()
-        meter.average()
+        #meter.record()
+        #meter.average()
     if args.web:
          meter.transfer(passwd)
     if args.internal:
