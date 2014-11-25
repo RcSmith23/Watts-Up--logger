@@ -204,8 +204,8 @@ class WattsUp(object):
                                     break;
                         n += self.interval                      
                 line = self.s.readline()
+            n += self.interval
             for i in range(0, 10):
-                time.sleep(1)
                 if line.startswith( '#d' ):
                     if args.raw:
                         r.write(line)
@@ -214,7 +214,7 @@ class WattsUp(object):
                         W = float(fields[3]) / 10;
                         V = float(fields[4]) / 10;
                         A = float(fields[5]) / 1000;
-                        C = psutil.cpu_percent()
+                        C = psutil.cpu_percent(1)
                         M = psutil.virtual_memory()[2]
                         if self.logfile:
                             fd.write('%s %d %3.1f %3.1f %5.3f %3.1f %3.1f\n' % (datetime.datetime.now(), n, W, V, A, C, M))
