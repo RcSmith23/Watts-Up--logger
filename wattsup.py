@@ -115,7 +115,6 @@ class WattsUp(object):
             pass
         for x in range(0, 29):
             for y in range(0, 10):
-                line = self.s.readline()
                 psutil.cpu_percent(1)
             n = 0
             if x < 15:
