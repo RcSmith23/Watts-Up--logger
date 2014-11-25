@@ -340,7 +340,7 @@ class WattsUp(object):
                 if i < 15:
                     test_file = 'Readings/' + self.tests[i]
                 else:
-                    test_file = 'Readings/' + self.tests[1] + self.tests[29-i]
+                    test_file = 'Readings/' + self.tests[5] + self.tests[29-i]
                 try:
                     sftp.put(test_file)
                 except:
