@@ -115,8 +115,8 @@ class WattsUp(object):
             pass
         for x in range(0, 29):
             for y in range(0, 10):
-                time.sleep(1)
                 line = self.s.readline()
+                psutil.cpu_percent(1)
             n = 0
             if x < 15:
                 self.logfile = "Readings/" + self.tests[x]
@@ -158,8 +158,6 @@ class WattsUp(object):
                 pid = os.getpid()
                 pid_path = '/proc/' + str(pid)
             while True:
-                if args.sim:
-                    time.sleep(self.interval)
                 if line.startswith( '#d' ):
                     if args.raw:
                         r.write(line)
@@ -168,7 +166,7 @@ class WattsUp(object):
                         W = float(fields[3]) / 10;
                         V = float(fields[4]) / 10;
                         A = float(fields[5]) / 1000;
-                        C = psutil.cpu_percent()
+                        C = psutil.cpu_percent(1)
                         M = psutil.virtual_memory()[2]
                         screen.clear()
                         if x < 15:
