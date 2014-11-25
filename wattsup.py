@@ -121,7 +121,7 @@ class WattsUp(object):
             if x < 15:
                 self.logfile = "Readings/" + self.tests[x]
             else:
-                self.logfile = "Readings/" + self.tests[1] + self.tests[29-x]
+                self.logfile = "Readings/" + self.tests[5] + self.tests[29-x]
             dacapo = 'dacapo-9.12-bach.jar'
             proc = None
             proc2 = None
@@ -146,7 +146,7 @@ class WattsUp(object):
                     pid_path = '/proc/' + str(pid)
                 else:
                     try:
-                        proc = subprocess.Popen(['java', '-jar', dacapo, self.tests[1]])
+                        proc = subprocess.Popen(['java', '-jar', dacapo, self.tests[5]])
                         proc2 = subprocess.Popen(['java', '-jar', dacapo, self.tests[29-x]])
                     except:
                         print 'Failed to launch double benchmarks'
@@ -173,7 +173,7 @@ class WattsUp(object):
                             screen.addstr(2, 4, 'Running test: %s, path: %s' % (self.tests[x], pid_path))
                         else:
                             screen.addstr(2, 4, 'Running tests: %s and %s, paths: %s, %s' 
-                                            % (self.tests[1], self.tests[29-x], pid_path, pid_path2))
+                                            % (self.tests[5], self.tests[29-x], pid_path, pid_path2))
                         screen.addstr(4, 4, 'Time:     %d s' % n)
                         screen.addstr(5, 4, 'Power:   %3.1f W' % W)
                         screen.addstr(6, 4, 'Voltage: %5.1f V' % V)
