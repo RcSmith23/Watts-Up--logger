@@ -24,7 +24,7 @@ if __name__ == "__main__":
 
     #possible print, see where to print for daemon service
 
-    while True:
+    while 1:
         read_sockets, write_sockets, error_sockets = \
                         select.select(CONNECTION_LIST,[],[])
 
@@ -39,31 +39,33 @@ if __name__ == "__main__":
                 try:
                     # Here need to parse data and execute
                     data = sock.recv(RECV_BUFFER)
-                    print "Message: ", data
-                    data.split(" ")
+                    message = data.split(" ")
+                    print message[0]
                     # If length 1, checking if alive or logging
-                    if data.length == 1:
-                        if data[0] == 'Alive':
+                    if len(message) == 1:
+                        if message[0] == 'Alive':
                             sock.send('Yes')
-                        elif data[0] == 'Log':
+                        elif message[0] == 'Log':
                             val = 'Yes' if logger.logging() else 'No'
                             sock.send(val)
+                        else:
+                            sock.send('Invalid')
                     # Length 2: whether to start or stop logging
-                    elif data.length == 2:
-                        if data[0] == 'Log':
-                            if data[1] == 'Start' and not logger.logging():
+                    elif len(message) == 2:
+                        if message[0] == 'Log':
+                            if message[1] == 'Start' and not logger.logging():
                                 try:
                                     logger.start()
                                 except Exception as e:
                                     sock.send('Error Log')
-                            elif data[1] == 'Stop' and logger.logging():
+                            elif message[1] == 'Stop' and logger.logging():
                                 try:
                                     logger.stop()
                                 except Exception as e:
                                     sock.send('Error Log')
                     # Length > 2: run a benchmark
-                    elif data.length > 2:
-                        if data[0] == 'Bench' and data[1] == 'Start':
+                    elif len(message) > 2:
+                        if message[0] == 'Bench' and message[1] == 'Start':
                             if not logger.logging():
                                 try:
                                     logger.start()
@@ -71,7 +73,7 @@ if __name__ == "__main__":
                                     sock.send('Error Run')
                             if not dacapo.running() and logger.logging():
                                 try:
-                                    dacapo.run(data[2:])
+                                    dacapo.run(message[2:])
                                 except Exception as e:
                                     sock.send('Error Run')
                 except:
