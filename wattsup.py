@@ -1,34 +1,4 @@
 #!/usr/bin/env python
-"""record data from WattsUp power meter
-
-Reads data from a Watts Up PRO or compatible power meter (http://www.wattsupmeters.com).
-Plots in real time, can run in simulation mode, reading from a file rather than
-a physical power meter.
-
-Output format will be space sperated containing:
-YYYY-MM-DD HH:MM:SS.ssssss n W V A
-where n is sample number, W is power in watts, V volts, A current in amps
-
-Usage: "wattsup.py -h" for options
-
-Author: Kelsey Jordahl
-Copyright: Kelsey Jordahl 2011
-License: GPLv3
-Time-stamp: <Tue Sep 20 09:14:29 EDT 2011>
-
-    This program is free software: you can redistribute it and/or
-    modify it under the terms of the GNU General Public License as
-    published by the Free Software Foundation, either version 3 of the
-    License, or (at your option) any later version.  A copy of the GPL
-    version 3 license can be found in the file COPYING or at
-    <http://www.gnu.org/licenses/>.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-"""
 
 import os, serial
 import datetime, time
