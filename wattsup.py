@@ -46,7 +46,7 @@ class WattsUp(object):
 		13 : 'xalan',
 		14 : 'avrora' }
 
-    def benchmark(self, logfile = None):
+    def benchmark(self):
         print 'Running Benchmarks...'
         line = self.s.readline()
         n = 0
@@ -144,7 +144,7 @@ def main(args):
         passwd = getpass.getpass('Webserver password: ')
     meter = WattsUp(args.port, args.interval)
     if args.bench:
-        meter.benchmark(args.outfile)
+        meter.benchmark()
     if args.web:
          meter.transfer(passwd)
 
