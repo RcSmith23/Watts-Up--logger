@@ -22,7 +22,6 @@ class WattsUp(object):
         self.logfile = None
         self.machine_file = 'Readings/' + uname()[1]
         self.interval = interval
-        # initialize lists for keeping data
         self.t = []
         self.power = []
         self.potential = []
@@ -50,7 +49,7 @@ class WattsUp(object):
         print 'Running Benchmarks...'
         line = self.s.readline()
         n = 0
-        self.logfile = "Readings/" + self.tests[args.bench]
+        self.logfile = "Readings/" + self.tests[args.bench] + '4'
         dacapo = 'dacapo-9.12-bach.jar'
         proc = None
         try:
@@ -63,8 +62,8 @@ class WattsUp(object):
         if args.bench != 0:
             try:
                 for _ in range(4):
-                    pid = subprocess.Popen(['java', '-jar', dacapo, self.tests[self.bench]])
-                    proc.append(pid)
+                    process = subprocess.Popen(['java', '-jar', dacapo, self.tests[args.bench]])
+                    proc.append(process)
             except:
                 print 'Failed to launch benchmark.'
         while True:
@@ -76,7 +75,6 @@ class WattsUp(object):
                     A = float(fields[5]) / 1000;
                     C = psutil.cpu_percent(1)
                     M = psutil.virtual_memory()[2]
-                    c = screen.getch()
                     if self.logfile:
                         fd.write('%s %d %3.1f %3.1f %5.3f %3.1f %3.1f\n' % (datetime.datetime.now(), n, W, V, A, C, M))
             if args.bench == 0 and n >= 30:
