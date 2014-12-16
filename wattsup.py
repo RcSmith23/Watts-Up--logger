@@ -62,7 +62,7 @@ class WattsUp(object):
         proc = []
         if args.bench != 0:
             try:
-                for _ in range(4)
+                for _ in range(4):
                     proc << subprocess.Popen(['java', '-jar', dacapo, self.tests[self.bench]])
             except:
                 print 'Failed to launch benchmark.'
