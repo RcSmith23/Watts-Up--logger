@@ -76,7 +76,7 @@ class WattsUp(object):
                     c = screen.getch()
                     if self.logfile:
                         fd.write('%s %d %3.1f %3.1f %5.3f %3.1f %3.1f\n' % (datetime.datetime.now(), n, W, V, A, C, M))
-            if x == 0 and n >= 30:
+            if args.bench == 0 and n >= 30:
                 break
             ps_status = [p.poll() for p in proc]
             if all([x is not None for x in ps_status]):
