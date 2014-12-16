@@ -64,7 +64,6 @@ class WattsUp(object):
                 proc = [subprocess.Popen(['java', '-jar', dacapo, self.tests[self.bench]]) for _ in range(4)]
             except:
                 print 'Failed to launch benchmark.'
-                continue
         while True:
             if line.startswith( '#d' ):
                 fields = line.split(',')
