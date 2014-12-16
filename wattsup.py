@@ -62,7 +62,8 @@ class WattsUp(object):
         proc = []
         if args.bench != 0:
             try:
-                proc = [subprocess.Popen(['java', '-jar', dacapo, self.tests[self.bench]]) for _ in range(4)]
+                for _ in range(4)
+                    proc << subprocess.Popen(['java', '-jar', dacapo, self.tests[self.bench]])
             except:
                 print 'Failed to launch benchmark.'
         while True:
@@ -101,7 +102,7 @@ class WattsUp(object):
             if not sftp.isdir(info[1]):
                 sftp.mkdir(info[1], mode=777)
             sftp.cwd(info[1])
-            test_file = 'Readings/' + self.tests[self.bench] + '4'
+            test_file = 'Readings/' + self.tests[args.bench] + '4'
             try:
                 sftp.put(test_file)
             except:
