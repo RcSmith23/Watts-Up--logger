@@ -6,13 +6,13 @@ import sys
 db_name = 'energy_research'
 tables = {}
 tables['machines'] = """CREATE TABLE IF NOT EXISTS machines (
-    id INTEGER PRIMARY KEY,
+    id INT PRIMARY KEY,
     name TEXT NOT NULL,
     cores INT,
     memory INT
-    ) ENGINE = INNODB;"""
+    );"""
 tables['recordings'] = '''CREATE TABLE IF NOT EXISTS recordings (
-    id INTEGER PRIMARY KEY AUTO_INCREMENT,
+    id INT PRIMARY KEY AUTO_INCREMENT,
     time_stamp TIMESTAMP NOT NULL,
     watts DOUBLE(4,1) NOT NULL,
     amps DOUBLE(4,1) NOT NULL,
@@ -21,29 +21,29 @@ tables['recordings'] = '''CREATE TABLE IF NOT EXISTS recordings (
     mem_usage DOUBLE(3,1) NOT NULL,
     io_usage DOUBLE(3,1) NOT NULL,
     machine_id INT NOT NULL,
-        CONSTRAINT fk_recording_machine
-            FOREIGN KEY (machine_id) REFERENCES machines (id)
-    ) ENGINE = INNODB;'''
+    FOREIGN KEY (machine_id) REFERENCES machines(id)
+    );'''
 tables['instances'] = '''CREATE TABLE IF NOT EXISTS instances (
-    id INTEGER PRIMARY KEY,
+    id INT PRIMARY KEY,
     start_time TIMESTAMP NOT NULL,
     end_time TIMESTAMP NOT NULL,
     machine_id INT NOT NULL,
-        CONSTRAINT fk_recording_machine
-            FOREIGN KEY (machine_id) REFERENCES machines (id)
-    ) ENGINE = INNODB;'''
+    FOREIGN KEY (machine_id) REFERENCES machines(id)
+    );'''
 tables['benchmarks'] = '''CREATE TABLE IF NOT EXISTS benchmarks (
-    id INTEGER PRIMARY KEY,
+    id INT PRIMARY KEY,
     name TEXT NOT NULL,
     mem_intensive BOOL,
     cpu_intensive BOOL,
     description TEXT
-    ) ENGINE = INNODB;'''
+    );'''
 tables['benchmark_relation'] = '''CREATE TABLE IF NOT EXISTS benchmark_relation (
-    id INTEGER PRIMARY KEY,
-    instance_id INT FOREIGN KEY,
-    benchmark_id INT FOREIGN KEY
-    ) ENGINE = INNODB;'''
+    id INT PRIMARY KEY,
+    instance_id INT NOT NULL,
+    benchmark_id INT NOT NULL,
+    FOREIGN_KEY (instance_id) REFERENCES instances(id),
+    FOREIGN_KEY (benchmark_id) REFERENCES benchmarks(id)
+    );'''
 
 try:
     con = mdb.connect('beast', 'rsmith23', 'rsmith231', db_name)
@@ -51,9 +51,9 @@ try:
     for t in tables:
         try:
             cur.execute(tables[t])
-            cur.commit()
         except mdb.Error, e:
             print "Error %d: %s" % (e.args[0], e.args[1])
+    con.commit()
 
 except mdb.Error, e:
     print "Error %d: %s" % (e.args[0], e.args[1])
