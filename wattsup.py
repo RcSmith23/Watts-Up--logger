@@ -101,7 +101,7 @@ class WattsUp(object):
             if not sftp.isdir(info[1]):
                 sftp.mkdir(info[1], mode=777)
             sftp.cwd(info[1])
-            test_file = 'Readings/' + self.tests[i] + '4'
+            test_file = 'Readings/' + self.tests[self.bench] + '4'
             try:
                 sftp.put(test_file)
             except:
