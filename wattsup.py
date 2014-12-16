@@ -50,7 +50,7 @@ class WattsUp(object):
         print 'Running Benchmarks...'
         line = self.s.readline()
         n = 0
-        self.logfile = "Readings/" + self.tests[x]
+        self.logfile = "Readings/" + self.tests[args.bench]
         dacapo = 'dacapo-9.12-bach.jar'
         proc = None
         try:
@@ -59,7 +59,7 @@ class WattsUp(object):
             print 'Failed to open %s, will not log to file.' % self.logfile
             self.logfile = False
         
-        if x != 0:
+        if args.bench != 0:
             try:
                 proc = [subprocess.Popen(['java', '-jar', dacapo, self.tests[self.bench]]) for _ in range(4)]
             except:
@@ -74,10 +74,6 @@ class WattsUp(object):
                     C = psutil.cpu_percent(1)
                     M = psutil.virtual_memory()[2]
                     c = screen.getch()
-                    if c in (ord('s'), ord('S')):
-                        if x != 14:
-                            proc.kill()
-                        break  # Exit the while()
                     if self.logfile:
                         fd.write('%s %d %3.1f %3.1f %5.3f %3.1f %3.1f\n' % (datetime.datetime.now(), n, W, V, A, C, M))
             if x == 0 and n >= 30:
