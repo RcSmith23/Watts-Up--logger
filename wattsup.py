@@ -81,9 +81,11 @@ class WattsUp(object):
                         break  # Exit the while()
                     if self.logfile:
                         fd.write('%s %d %3.1f %3.1f %5.3f %3.1f %3.1f\n' % (datetime.datetime.now(), n, W, V, A, C, M)
-                break if x == 0 and n >= 30
+                if x == 0 and n >= 30:
+                    break
             ps_status = [p.poll() for p in proc]
-            break if all([x is not None for x in ps_status])
+            if all([x is not None for x in ps_status]):
+                break
             n += self.interval         
             line = self.s.readline()
         try:
