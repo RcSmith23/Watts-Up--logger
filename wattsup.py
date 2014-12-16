@@ -59,6 +59,7 @@ class WattsUp(object):
             print 'Failed to open %s, will not log to file.' % self.logfile
             self.logfile = False
         
+        proc = []
         if args.bench != 0:
             try:
                 proc = [subprocess.Popen(['java', '-jar', dacapo, self.tests[self.bench]]) for _ in range(4)]
