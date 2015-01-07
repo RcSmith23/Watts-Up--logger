@@ -11,7 +11,7 @@ import getpass
 import sqlite3
 import subprocess
 import psutil
-
+    
 class WattsUp(object):
     def __init__(self, port, interval):
         self.s = serial.Serial(port, 115200 )
@@ -97,7 +97,7 @@ class WattsUp(object):
             self.webserver = None
         if self.webserver:
             info = uname()
-            sftp.cwd('Documents/Cluster');
+            sftp.cwd('workspace/wattsup/cluster');
             if not sftp.isdir(info[1]):
                 sftp.mkdir(info[1], mode=777)
             sftp.cwd(info[1])
