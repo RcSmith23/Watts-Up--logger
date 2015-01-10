@@ -37,9 +37,11 @@ class WattsUp(object):
         self.memory = []
         self.thread = None
 
+    # Checking to see if there is a thread logging already
     def logging(self):  
         True if self.thread is not None else False
 
+    # Start logging
     def start(self):
         if self.thread is None:
             self.thread_event = threading.Event()
@@ -49,6 +51,7 @@ class WattsUp(object):
             except:
                 raise Exception("Could not start thread")
 
+    # Stop logging
     def stop(self):
         if self.thread is not None:
             self.thread_event.set()
@@ -57,6 +60,7 @@ class WattsUp(object):
             else:
                 raise Exception("Could not kill thread")
 
+    # The logging code, run on a separate thread.
     def run(self, stop_event):
         #Need to open up database connection first
         line = self.s.readline()
@@ -79,6 +83,8 @@ class WattsUp(object):
             n += self.interval
             line = self.s.readline()
 
+    # This code is still here only as reference. Will move a similar version
+    # in to the run function.
     def record(self):
         conn = sqlite3.connect('Databases/records.db')
         cursor = conn.cursor()
@@ -123,7 +129,7 @@ class WattsUp(object):
         conn.close()
 
 
-    #Returns False if process is a zombie, otherwise True
+    # Returns False if process is a zombie, otherwise True
     def procStatus(self, pid):
         for line in open("/proc/%d/status" % pid).readlines():
             if line.startswith("State:"):

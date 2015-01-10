@@ -1,5 +1,15 @@
 #!/usr/bin/env python
 
+# This class will spawn a dacapo benchmark, and record it as
+# an instance in the database. 
+#
+# Only has simple capabilities currently. Runs all the tests 
+# sequentially.
+# 
+# To Do: Allow the choice to run specific set of tests at a time.
+# Add in delay to the begginning of each test run.
+# Log to the database
+
 import time
 import subprocess
 
