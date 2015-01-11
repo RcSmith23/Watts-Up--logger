@@ -5,7 +5,7 @@ import select
 import wattsup
 import dacapo
 
-def main():
+if __name__ == "__main__":
     logger = wattsup.WattsUp()
     dacapo = dacapo.DacapoSuite()
 
@@ -83,6 +83,4 @@ def main():
     server_socket.shutdown()
     server_socket.close()
 
-if __name__ == "__main__":
-    main()
 
