@@ -7,10 +7,19 @@
 #
 # This script is for a daemon that utilized Ubuntu's Upsart 
 # Make sure your distribution supports Upstart
+# 
+# This script also sets the environtment vairables: DB_HOST,
+# DB_USERNAME, DB_PASS and DB_HOST by prompting the user.
+# These are used to access your MySQL server.
 
-# Checking that it is run with bash
+# ---------------------------------------------------------
+# Checking requirements are met for running this script
+# Setting up...
+# ---------------------------------------------------------
+
 CURRENT=$(pwd)
 PROGNAME=$(basename $0)
+
 if [ -z "$BASH_VERSION" ]; then
 	echo "${PROGNAME}: Must run with bash."
 	exit 1
@@ -33,14 +42,22 @@ if [ "${UPSTART}" != "install ok installed" ]; then
 	error_exit "$LINENO: Upstart is not installed."
 fi	
 
-# Moving all daemon code to /lib/wattsup
+# ---------------------------------------------------------
+# Moving all daemon code to proper location. Currently set 
+# to be /lib/wattsup
+# ---------------------------------------------------------
+
 DACAPO="http://downloads.sourceforge.net/project/dacapobench/9.12-bach/dacapo-9.12-bach.jar"
 DIRECTORY=/lib/wattsup
+
+# Making the 'wattsup' directory.
 if [ ! -d "$DIRECTORY" ]; then
 	mkdir "$DIRECTORY" || error_exit "$LINENO: Could not create directory: $DIRECTORY"
 fi
 
 cd ../
+
+# Moving wattdaemon to proper location.
 if [ -e "wattdaemon.py" ]; then
 	if [ ! -e "$DIRECTORY/wattdaemon.py" ]; then
 		cp wattdaemon.py "$DIRECTORY"/wattdaemon.py || error_exit "$LINEON: Could not copy wattdaemon.py"
@@ -49,6 +66,7 @@ else
 	error_exit "$LINENO: wattdaemon.py could not be found."
 fi
 
+# Moving wattsup to proper location.
 if [ -e "wattsup.py" ]; then
 	if [ ! -e "$DIRECTORY/wattsup.py" ]; then
 		cp wattsup.py "$DIRECTORY"/wattsup.py || error_exit "$LINEON: Could not copy wattsup.py"
@@ -57,6 +75,7 @@ else
 	error_exit "$LINENO: wattsup.py could not be found."
 fi
 
+# Moving dacapo.py to proper location.
 if [ -e "dacapo.py" ]; then
 	if [ ! -e "$DIRECTORY/dacapo.py" ]; then
 		cp dacapo.py "$DIRECTORY"/dacapo.py || error_exit "$LINEON: Could not copy dacapo.py"
@@ -65,13 +84,14 @@ else
 	error_exit "$LINENO: dacapo.py could not be found."
 fi
 
+# Changing in to the new directory.
 if [ -d "$DIRECTORY" ]; then
 	cd "$DIRECTORY" || error_exit "$LINEON: Error moving to: ${DIRECTORY}."
 else
 	error_exit "$LINEON: Daemon directory ${DIRECTORY} does not exist."
 fi
 
-# Download dacapo suite to /srv/wattsup
+# Download dacapo suite to /lib/wattsup
 if [ ! -e "dacapo-9.12-bach.jar" ]; then
 	wget "${DACAPO}" || error_exit "$LINEON: Could not download Dacapo benchmark suite."
 fi
@@ -83,8 +103,44 @@ if [ -d "/etc/init" ] && [ -e "wattsup.conf" ]; then
 else
 	error_exit "$LINEON: /etc/init not dir or wattsup.conf does not exist."
 fi
-	
-# Initialize the service
+
+# ---------------------------------------------------------
+# Setting up compliance with the database
+# ---------------------------------------------------------
+
+# Setting up the environment variables for DB
+if [ -z "$DB_HOST" ]; then
+    echo Enter energy database hostname:
+    read HOST
+    export DB_HOST="$HOST"
+fi
+
+# Setting up env for db username
+if [ -z "$DB_USERNAME" ]; then
+    echo Enter energy database username:
+    read USERN
+    export DB_USERNAME="$USERN"
+fi
+
+# Setting up env for user password on database
+if [ -z "$DB_PASS" ]; then
+    echo "Enter energy db password for $DB_USERNAME:"
+    read PASS
+    export $DB_PASS="$PASS"
+fi
+
+# Setting up db name to use
+if [ -z "$BD_NAME" ]; then
+    echo Enter energy db name:
+    read NAME
+    export DB_NAME="$NAME"
+fi
+
+# ---------------------------------------------------------
+# Initializing and starting the daemon service
+# ---------------------------------------------------------
+
+# Initializing...
 initctl reload-configuration || error_exit "$LINEON: initctl reload-configuration failed."
 
 # Start the daemon
