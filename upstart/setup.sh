@@ -33,7 +33,7 @@ if [ "${UPSTART}" != "install ok installed" ]; then
 	error_exit "$LINENO: Upstart is not installed."
 fi	
 
-# Moving all daemon code to /srv/wattsup
+# Moving all daemon code to /lib/wattsup
 DACAPO="http://downloads.sourceforge.net/project/dacapobench/9.12-bach/dacapo-9.12-bach.jar"
 DIRECTORY=/lib/wattsup
 if [ ! -d "$DIRECTORY" ]; then

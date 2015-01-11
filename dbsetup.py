@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 import MySQLdb as mdb
 import sys
-
+    
 db_name = 'energy_research'
 tables = {}
 tables['machines'] = """CREATE TABLE IF NOT EXISTS machines (
