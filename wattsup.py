@@ -62,6 +62,15 @@ class WattsUp(object):
 
     # The logging code, run on a separate thread.
     def run(self, stop_event):
+        db_host = os.getenv('DB_HOST')
+        db_user = os.getenv('DB_USERNAME')
+        db_pass = os.getenv('DB_PASS')
+        db_name = os.getenv('DB_NAME')
+
+        try:
+            con = mdb.connect(db_host, db_user, db_pass, db_name)
+            cur = con.cursor()
+
         #Need to open up database connection first
         line = self.s.readline()
         n = 0
@@ -76,58 +85,17 @@ class WattsUp(object):
                     cpu = pustil.cpu_percent()
                     memory = psutil.virtual_memory().percent
                     time = datetime.datetime.now()
-                        
+                    
+                    insertValues = """INSERT INTO recordings 
+                                        (watts, amps, volts, cpu_usage,
+                                        mem_usage, io_usage, machineId)
+                                        VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                                        (watts, amperage, voltage, cpu, memory, 0)
                     #
                     # Where to write to database
                     #
             n += self.interval
             line = self.s.readline()
-
-    # This code is still here only as reference. Will move a similar version
-    # in to the run function.
-    def record(self):
-        conn = sqlite3.connect('Databases/records.db')
-        cursor = conn.cursor()
-        for x in range(0, 15):
-           total_watts = 0
-           peak_watts = 0
-           end_time = None
-           peak_current = 0
-           peak_voltage = 0       
-           test_name = self.tests[x]
-           test_file = 'Readings/' + test_name
-           try:
-               fd = open(test_file, 'r')
-           except:
-               print "Couldn't open file %s, cannot record", test_file
-           i = 0
-           for l in fd:
-               l = l.rstrip()
-               values = l.split(" ")
-               total_watts += float(values[3])
-               if float(values[3]) > peak_watts:
-                   peak_watts = float(values[3])
-               if float(values[4]) > peak_voltage:
-                   peak_voltage = float(values[4])
-               if float(values[5]) > peak_current:
-                   peak_current = float(values[5])
-               if i == 0:
-                   temp_start_time = values[0] + ' ' + values[1]
-               i += 1
-           start_time = datetime.datetime.strptime(temp_start_time, '%Y-%m-%j %H:%M:%S.%f')
-           temp_end_time = values[0] + ' ' + values[1]
-           end_time = datetime.datetime.strptime(temp_end_time, '%Y-%m-%j %H:%M:%S.%f')
-           fd.close()
-           time_elapsed = end_time - start_time
-           start_time = str(start_time)
-           end_time = str(end_time)
-           cursor.execute("""INSERT INTO instances (test_name, time_started, time_completed, time_elapsed,
-				total_wattage, peak_wattage, peak_current, peak_voltage) VALUES
-				(?, ?, ?, ?, ?, ?, ?, ?, ?)""", (test_name, str(start_time), str(end_time), str(time_elapsed),
-			        total_watts, peak_watts, peak_current, peak_voltage))
-        conn.commit()
-        conn.close()
-
 
     # Returns False if process is a zombie, otherwise True
     def procStatus(self, pid):
