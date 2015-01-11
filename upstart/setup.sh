@@ -139,6 +139,9 @@ if [ -z "$BD_NAME" ]; then
     export DB_NAME="$NAME"
 fi
 
+# Run the database setup script (dbsetup.py)
+python2.7 dbsetup.py
+
 # ---------------------------------------------------------
 # Initializing and starting the daemon service
 # ---------------------------------------------------------
