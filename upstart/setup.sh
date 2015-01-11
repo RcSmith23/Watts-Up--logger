@@ -108,6 +108,9 @@ fi
 # Setting up compliance with the database
 # ---------------------------------------------------------
 
+# The checks for variable already being set are not 100% correct.
+# Should fix in the near future.
+
 # Setting up the environment variables for DB
 if [ -z "$DB_HOST" ]; then
     echo Enter energy database hostname:
