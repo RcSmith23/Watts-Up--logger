@@ -8,20 +8,12 @@ import sqlite3
 import subprocess
 import psutil
 import threading
-
-EXTERNAL_MODE = 'E'
-INTERNAL_MODE = 'I'
-TCPIP_MODE = 'T'
-FULLHANDLING = 2
+import MySQLdb as mdb
 
 class WattsUp(object):
     def __init__(self, port=None, interval=None):
         if not port:
-            system = uname()[0]
-            if system == 'Darwin':          # Mac OS X
-                port = '/dev/tty.usbserial-A1000wT3'
-            elif system == 'Linux':
-                port = '/dev/ttyUSB0'
+            port = '/dev/ttyUSB0'
         if os.path.isfile(port):
             self.s = serial.Serial(port, 115200 )
         else:
@@ -29,13 +21,8 @@ class WattsUp(object):
 
         self.meter = True
         self.interval = 1.0 if not interval else interval
-        self.t = []
-        self.power = []
-        self.potential = []
-        self.current = []
-        self.cpu = []
-        self.memory = []
         self.thread = None
+        self.dbConnect = False
 
     # Checking to see if there is a thread logging already
     def logging(self):  
@@ -70,6 +57,8 @@ class WattsUp(object):
         try:
             con = mdb.connect(db_host, db_user, db_pass, db_name)
             cur = con.cursor()
+        except mdb.Error, e:
+            self.stop()
 
         #Need to open up database connection first
         line = self.s.readline()
@@ -89,12 +78,16 @@ class WattsUp(object):
                     insertValues = """INSERT INTO recordings 
                                         (watts, amps, volts, cpu_usage,
                                         mem_usage, io_usage, machineId)
-                                        VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                                        VALUES (?, ?, ?, ?, ?, ?, ?)""", \
                                         (watts, amperage, voltage, cpu, memory, 0)
-                    #
-                    # Where to write to database
-                    #
-            n += self.interval
+                    try:
+                        cur.execute(insertValues)
+                        con.commit()
+                    except mdb.Error, e:
+                        pass
+                        # Print out some sort of log message maybe
+
+                    n += self.interval
             line = self.s.readline()
 
     # Returns False if process is a zombie, otherwise True
