@@ -1,11 +1,9 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2.7
 
 import os, serial
 import datetime, time
 from platform import uname
 import numpy as np
-import sqlite3
-import subprocess
 import psutil
 import threading
 import MySQLdb as mdb
@@ -89,13 +87,3 @@ class WattsUp(object):
 
                     n += self.interval
             line = self.s.readline()
-
-    # Returns False if process is a zombie, otherwise True
-    def procStatus(self, pid):
-        for line in open("/proc/%d/status" % pid).readlines():
-            if line.startswith("State:"):
-                values = line.split(":", 1)[1].strip().split(' ')[0]
-                if values[0] == 'Z':
-                    return False
-                else:
-                    return True
