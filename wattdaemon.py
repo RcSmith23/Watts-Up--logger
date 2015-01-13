@@ -1,13 +1,39 @@
 #!/usr/bin/env python2.7
-#Socket server using select
 import socket
 import select
+from platform import uname
+import MySQLdb as mdb
 import wattsup
 import dacapo
 
 if __name__ == "__main__":
-    logger = wattsup.WattsUp()
-    dacapo = dacapo.DacapoSuite()
+
+    # Get vlues for  db connection
+    machine = uname()[1]
+    db_host = os.getenv('DB_HOST')
+    db_user = os.getenv('DB_USERNAME')
+    db_pass = os.getenv('DB_PASS')
+    db_name = os.getenv('DB_NAME')
+
+    # Query for the machine's id
+    idQuery = """SELECT * FROM machines WHERE name = %s""" % (machine)
+    try:
+        con = mdb.connect(db_host, db_user, db_pass, db_name)
+        cur = con.cursor()
+    except mdb.Error, e:
+        pass
+
+    try:
+        cur.execute(idQuery)
+        row = cur.fetchone()
+    except mdb.Error, e:
+        pass
+
+    machineId = row[0] 
+
+    # Create a logger and dacapo object
+    logger = wattsup.WattsUp(machineId)
+    dacapo = dacapo.DacapoSuite(machineId)
 
     CONNECTION_LIST = []
     RECV_BUFFER = 1024
@@ -20,8 +46,6 @@ if __name__ == "__main__":
 
     #add the socket to the connections list
     CONNECTION_LIST.append(server_socket)
-
-    #possible print, see where to print for daemon service
 
     while 1:
         read_sockets, write_sockets, error_sockets = \
