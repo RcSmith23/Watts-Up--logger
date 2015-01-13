@@ -16,7 +16,7 @@ if __name__ == "__main__":
     db_name = os.getenv('DB_NAME')
 
     # Query for the machine's id
-    idQuery = """SELECT * FROM machines WHERE name = %s""" % (machine)
+    idQuery = """SELECT * FROM machines WHERE name = '%s'""" % (machine)
     try:
         con = mdb.connect(db_host, db_user, db_pass, db_name)
         cur = con.cursor()
@@ -30,6 +30,7 @@ if __name__ == "__main__":
         pass
 
     machineId = row[0] 
+    con.close()
 
     # Create a logger and dacapo object
     logger = wattsup.WattsUp(machineId)

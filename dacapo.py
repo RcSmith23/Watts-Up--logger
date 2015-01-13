@@ -1,22 +1,27 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2.7
 
 # This class will spawn a dacapo benchmark, and record it as
 # an instance in the database. 
 #
-# Only has simple capabilities currently. Runs all the tests 
-# sequentially.
-# 
-# To Do: Allow the choice to run specific set of tests at a time.
-# Add in delay to the begginning of each test run.
-# Log to the database
+# Given a set of Dacapo tests they will be run concurrently.
+# Records total time taken for all tests to complete.
+# Delays test running before and after they are started to 
+# allow pc to reach idle power.
+#
+# Will not record whether or not the actual test was failed
+# or failed to complete.
+#
+# To Do: Add ability to run multiple of same test. (There is a problem
+# with the Dacapo suite that is limiting this)
 
 import time
 import subprocess
 import threading
+import datetime
 
 class DacapoSuite(object):
     def __init__(self, machineId):
-        self.delay = 7
+        self.delay = 10
         self.dacapo = 'dacapo-9.12-bach.jar'
         self.times = []
         self.processes = []
@@ -54,10 +59,14 @@ class DacapoSuite(object):
             clean(False)
 
     def launch(self):
-        # Need to record start time and add end delay to watch
-
         # Sleep to fall to idle power
         time.sleep(self.delay)
+
+        # Recording the start of the test
+        # Will leave time gaps between tests
+        # When retrieving the info, can pull this extra time to show
+        # the cooldown afterwards.
+        self.times[0] = datetime.datetime.now()
 
         # Launch the tests as subprocesses
         try:
@@ -69,6 +78,10 @@ class DacapoSuite(object):
 
         # Wait for subprocesses to terminate, save exit codes for future use
         exitCodes = [p.wait() for p in self.processes]
+
+        # Get the end time, then delay. Then do a clean up.
+        self.times[1] = datetime.datetime.now()
+        time.sleep(self.delay)
         clean()
         
     def running(self):
@@ -79,8 +92,8 @@ class DacapoSuite(object):
 
     # Cleans up after tests, adds to database
     def clean(self, success=True):
+        # If not successful, just kill the tests
         if not success:
-            # Just kill the tests
             for p in self.processes:
                 os.kill(p.pid(), SIGQUIT)
         else:
@@ -95,21 +108,37 @@ class DacapoSuite(object):
                 cur = con.cursor()
             except mdb.Error, e:
                 pass
+
             instanceInsert = """INSERT INTO instances (start_time, end_time,
                                 machine_id) VALUES (?, ?, ?)""", \
                                 (self.times[0], self.times[1], self.machineId)
             try:
                 cur.execute(instanceInsert)
                 con.commit()
-            except mmdb.Error, e:
-                pass
- 
-            relationInsert = """"""
-            try:
-                cur.execute(relationInsert)
-                con.commit()
             except mdb.Error, e:
                 pass
+            instanceId = cur.lastrowid
+
+            # Inserting the benchmark_realtion, one for each test 
+            # that was executed in the instance
+            for t in self.tests:
+                # First need to get the id of the benchmark
+                try:
+                    cur.execute("SELECT * FROM benchmarks WHERE name = '%s'", \
+                            (t) )
+                    row = cur.fetchone()
+                except mdb.Error, e:
+                    pass
+
+                # Next insert into benchmark_relation
+                relationInsert = """INSERT INTO benchmark_relation (instance_id,
+                                    benchmark_id) VALUES (?, ?)""", \
+                                    (instanceId, row[0])
+                try:
+                    cur.execute(relationInsert)
+                    con.commit()
+                except mdb.Error, e:
+                    pass
 
             con.close()
 
@@ -131,6 +160,7 @@ class DacapoSuite(object):
         clean(False)
  
     # Returns true if the process has become a zombie
+    # Not currently being used
     def isZombie(self, pid):
         for line in open("/proc/%d/status" % pid).readlines():
             if line.startswith("State:"):
