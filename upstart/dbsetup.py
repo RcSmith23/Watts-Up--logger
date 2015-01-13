@@ -1,10 +1,28 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+
+# Creates all tables for the database if they do not
+# currently exist. Adds the machine to the machines
+# table if it has not yet been added. Adds all the 
+# Dacapo suite tests to the benchmarks table if they
+# are not present.
+#
+# This script is launched from setup.sh. No reason to
+# call independently.
+#
+# Depends upon environment variables for the databse info.
+# $DB_HOST, $DB_USERNAME, $DB_PASS and $DB_NAME
+# These are all prompt to be set in the setup script.
+#
+
 import MySQLdb as mdb
 import sys, os
 import psutil
 from platform import uname
-    
+ 
+dacapoSuite = { 'avrora', 'batik', 'eclipse', 'fop', 'h2', 'jython', 'luindex',
+    'lusearch', 'pmd', 'sunflow', 'tomcat', 'tradebeans', 'tradesoap', 'xalan' }
+
 tables = {}
 
 tables[0] = """CREATE TABLE IF NOT EXISTS machines (
@@ -60,6 +78,7 @@ machineInsert = """INSERT INTO machines (name, cores, memory)
                     WHERE NOT EXISTS (
                         SELECT name FROM machines WHERE name = '%s'
                     ) LIMIT 1;""" % (machine, cores, memory, machine)
+
 try:
     # Setting up the database connection
     con = mdb.connect(db_host, db_user, db_pass, db_name)
@@ -69,13 +88,26 @@ try:
     for t in xrange(len(tables)):
         try:
             cur.execute(tables[t])
+            con.commit()
         except mdb.Error, e:
             print "Error %d: %s" % (e.args[0], e.args[1])
-    con.commit()
 
+    for b in dacapoSuite:
+        try:
+            cur.execute("INSERT INTO benchmarks (name)
+                    SELECT * FROM (SELECT '%s') AS tmp
+                    WHERE NOT EXISTS (
+                        SELECT name FROM benchmarks WHERE name = '%s'
+                    ) LIMIT 1;", (b, b))
+            con.commit()
+        except mdb.Error, e:
+            pass
     # Adding an entry for this machine if not exists
-    cur.execute(machineInsert)
-    con.commit()
+    try:
+        cur.execute(machineInsert)
+        con.commit()
+    except mdb.Error, e:
+        pass
 
 except mdb.Error, e:
     print "Error %d: %s" % (e.args[0], e.args[1])

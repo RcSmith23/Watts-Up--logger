@@ -42,8 +42,7 @@ class DacapoSuite(object):
                 10 : 'tomcat',
                 11 : 'tradebeans',
                 12 : 'tradesoap',
-                13 : 'xalan',
-                14 : 'idle' }
+                13 : 'xalan' }
 
     # Takes tests as arguments, will add smaple size in future
     def run(self, tests=['avrora']):
