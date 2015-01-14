@@ -70,7 +70,7 @@ db_user = os.getenv('DB_USERNAME')
 db_pass = os.getenv('DB_PASS')
 db_name = os.getenv('DB_NAME')
 
-cores = psutil.cpu_count()
+cores = psutil.NUM_CPUS
 machine = uname()[1]
 memory = psutil.virtual_memory()[0] / 1000000000
 machineInsert = """INSERT INTO machines (name, cores, memory) 
