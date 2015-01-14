@@ -31,10 +31,10 @@ def main():
             cur.execute(machineInsert)
             con.commit()
         except mdb.Error, e:
-            pass
+            print "Error %d: %s" % (e.args[0], e.args[1])
 
     except mdb.Error, e:
-        pass
+        print "Error %d: %s" % (e.args[0], e.args[1])
 
     finally:
         if con:
