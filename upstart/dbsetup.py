@@ -26,12 +26,19 @@ dacapoSuite = { 'avrora', 'batik', 'eclipse', 'fop', 'h2', 'jython', 'luindex',
 tables = {}
 
 tables[0] = """CREATE TABLE IF NOT EXISTS machines (
-    id INT PRIMARY KEY,
+    id INT PRIMARY KEY AUTO_INCREMENT,
     name TEXT NOT NULL,
     cores INT,
     memory BIGINT
     );"""
-tables[1] = '''CREATE TABLE IF NOT EXISTS recordings (
+tables[1] = '''CREATE TABLE IF NOT EXISTS benchmarks (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    name TEXT NOT NULL,
+    mem_intensive BOOL,
+    cpu_intensive BOOL,
+    description TEXT
+    );'''
+tables[2] = '''CREATE TABLE IF NOT EXISTS recordings (
     id INT PRIMARY KEY AUTO_INCREMENT,
     time_stamp TIMESTAMP NOT NULL,
     watts DOUBLE(4,1) NOT NULL,
@@ -43,26 +50,19 @@ tables[1] = '''CREATE TABLE IF NOT EXISTS recordings (
     machine_id INT NOT NULL,
     FOREIGN KEY (machine_id) REFERENCES machines(id)
     );'''
-tables[2] = '''CREATE TABLE IF NOT EXISTS instances (
-    id INT PRIMARY KEY,
+tables[3] = '''CREATE TABLE IF NOT EXISTS instances (
+    id INT PRIMARY KEY AUTO_INCREMENT,
     start_time TIMESTAMP NOT NULL,
     end_time TIMESTAMP NOT NULL,
     machine_id INT NOT NULL,
     FOREIGN KEY (machine_id) REFERENCES machines(id)
     );'''
-tables[3] = '''CREATE TABLE IF NOT EXISTS benchmarks (
-    id INT PRIMARY KEY,
-    name TEXT NOT NULL,
-    mem_intensive BOOL,
-    cpu_intensive BOOL,
-    description TEXT
-    );'''
 tables[4] = '''CREATE TABLE IF NOT EXISTS benchmark_relation (
-    id INT PRIMARY KEY,
+    id INT PRIMARY KEY AUTO_INCREMENT,
     instance_id INT NOT NULL,
     benchmark_id INT NOT NULL,
-    FOREIGN_KEY (instance_id) REFERENCES instances(id),
-    FOREIGN_KEY (benchmark_id) REFERENCES benchmarks(id)
+    FOREIGN KEY (instance_id) REFERENCES instances(id),
+    FOREIGN KEY (benchmark_id) REFERENCES benchmarks(id)
     );'''
 
 db_host = os.getenv('DB_HOST')
