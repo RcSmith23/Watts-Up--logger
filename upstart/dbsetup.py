@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python2.7
 # -*- coding: utf-8 -*-
 
 # Creates all tables for the database if they do not
@@ -72,7 +72,7 @@ db_name = os.getenv('DB_NAME')
 
 cores = psutil.cpu_count()
 machine = uname()[1]
-memory = psutil.virtual_memory()[0]
+memory = psutil.virtual_memory()[0] / 1000000000
 machineInsert = """INSERT INTO machines (name, cores, memory) 
                     SELECT * FROM (SELECT '%s', '%d', '%d') AS tmp
                     WHERE NOT EXISTS (
@@ -94,10 +94,11 @@ try:
 
     for b in dacapoSuite:
         try:
-            cur.execute("INSERT INTO benchmarks (name)
-                    SELECT * FROM (SELECT '%s') AS tmp
-                    WHERE NOT EXISTS (
-                        SELECT name FROM benchmarks WHERE name = '%s'
+            cur.execute("INSERT INTO benchmarks (name, mem_intensive, \
+                    cpu_intensize) \
+                    SELECT * FROM (SELECT '%s') AS tmp \
+                    WHERE NOT EXISTS ( \
+                        SELECT name FROM benchmarks WHERE name = '%s' \
                     ) LIMIT 1;", (b, b))
             con.commit()
         except mdb.Error, e:

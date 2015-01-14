@@ -37,6 +37,17 @@ if __name__ == "__main__":
     logger = wattsup.WattsUp(machineId)
     dacapo = dacapo.DacapoSuite(machineId)
 
+
+    # From here down, all code is for controlling the daemon remotely.
+    # Daemon will listen on port 44000, can handle a few commands:
+    #
+    # Alive: just to see if the daemon is even responding.
+    # Log: To see if the logger has been created and started yet.
+    #   - start/stop: Combined with Log first, can tell machine to start
+    #       and stop logging to the database.
+    # Bench: Can launch dacapo tests on the specified machines.
+    #   - given 'start' and then a list of dacapo tests, will spawn all
+    #       concurrently on the specified machines. Logs to db.
     CONNECTION_LIST = []
     RECV_BUFFER = 1024
     PORT = 44000

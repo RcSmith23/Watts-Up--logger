@@ -1,0 +1,23 @@
+* INTRODUCTION
+
+This is a Python utility for recording and plotting data of a machine. The utility records power and CPU and memory usage. A Watts Up? meter is required for measuring the power used. And the Python module psutil is used to record the CPU and memory usage. This utility requires a database to be setup in order to easily store and retrieve data. The utility also provides an ability to run Dacapo benchmarks on all machines. 
+
+* Files
+
+A basic overview of what all the included files do.
+
+- ~wattdaemon.py~ :: This is the daemon script that runs on all machines.
+						It launches the logger and benchmark tools. Communicates 
+						with the controller application to controll the machine.
+- ~wattsup.py~ :: This file logs the energy along with cpu and memory usage and 
+					records it to the database.
+- ~dacapo.py~ :: This file launches the Dacapo suite benchmarks and records the times
+					to the database.
+- ~controller.py~ :: This is the client side tool for controlling all machines in use.
+						Allows to start/stop logging, launch benchmarks and plot saved data.
+						Still a work in progress.
+- ~upstart/dbsetup.py~ :: This is where a given database will be properly configured. And the machines
+							info will be inserted.
+- ~upstart/setup.sh~ :: When all code is brough on to the machines this script should be the first run.
+							It initializes the daemon and makes sure that everything is working correctly.
+
