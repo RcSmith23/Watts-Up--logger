@@ -70,15 +70,6 @@ db_user = os.getenv('DB_USERNAME')
 db_pass = os.getenv('DB_PASS')
 db_name = os.getenv('DB_NAME')
 
-cores = psutil.NUM_CPUS
-machine = uname()[1]
-memory = psutil.virtual_memory()[0] / 1000000000
-machineInsert = """INSERT INTO machines (name, cores, memory) 
-                    SELECT * FROM (SELECT '%s', '%d', '%d') AS tmp
-                    WHERE NOT EXISTS (
-                        SELECT name FROM machines WHERE name = '%s'
-                    ) LIMIT 1;""" % (machine, cores, memory, machine)
-
 try:
     # Setting up the database connection
     con = mdb.connect(db_host, db_user, db_pass, db_name)
@@ -103,17 +94,11 @@ try:
             con.commit()
         except mdb.Error, e:
             pass
-    # Adding an entry for this machine if not exists
-    try:
-        cur.execute(machineInsert)
-        con.commit()
-    except mdb.Error, e:
-        pass
-
+    
 except mdb.Error, e:
     print "Error %d: %s" % (e.args[0], e.args[1])
     sys.exit(1)
 
 finally:
      if con:
-        con.close()
+         con.close()
