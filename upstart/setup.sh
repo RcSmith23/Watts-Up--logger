@@ -140,7 +140,9 @@ if [ -z "$BD_NAME" ]; then
 fi
 
 # Run the database setup script (dbsetup.py)
-python2.7 dbsetup.py
+./dbsetup.py
+# Add machine to the database
+./minsert.py
 
 # ---------------------------------------------------------
 # Initializing and starting the daemon service
