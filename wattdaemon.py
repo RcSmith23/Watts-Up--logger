@@ -31,7 +31,7 @@ if __name__ == "__main__":
     except mdb.Error, e:
         print "Error %d: %s" % (e.args[0], e.args[1])
     
-    if not cursor.rowcount == 0:
+    if not cur.rowcount == 0:
         row = cur.fetchone()
         machineId = row[0] 
     else: 

@@ -93,7 +93,7 @@ try:
                     ) LIMIT 1;", (b, b))
             con.commit()
         except mdb.Error, e:
-            pass
+            print "Error %d: %s" % (e.args[0], e.args[1])
     
 except mdb.Error, e:
     print "Error %d: %s" % (e.args[0], e.args[1])
