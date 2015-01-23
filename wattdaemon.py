@@ -7,7 +7,7 @@ from platform import uname
 import MySQLdb as mdb
 import wattsup
 import dacapo
-import os
+import os, sys
 
 if __name__ == "__main__":
 
