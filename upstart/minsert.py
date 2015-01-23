@@ -22,7 +22,7 @@ def main():
                         FROM machines
                         WHERE NOT EXISTS (
                             SELECT 1 FROM machines WHERE name = '%s'
-                        );""" % (machine, cores, memory, machine)
+                        ) LIMIT 1;""" % (machine, cores, memory, machine)
 
     try:
         con = mdb.connect(db_host, db_user, db_pass, db_name)
