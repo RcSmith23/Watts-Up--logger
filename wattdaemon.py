@@ -1,4 +1,6 @@
 #!/usr/bin/env python2.7
+# -*- coding: utf-8 -*-
+
 import socket
 import select
 from platform import uname
@@ -22,16 +24,22 @@ if __name__ == "__main__":
         con = mdb.connect(db_host, db_user, db_pass, db_name)
         cur = con.cursor()
     except mdb.Error, e:
-        pass
+        print "Error %d: %s" % (e.args[0], e.args[1])
 
     try:
         cur.execute(idQuery)
-        row = cur.fetchone()
     except mdb.Error, e:
-        pass
+        print "Error %d: %s" % (e.args[0], e.args[1])
+    
+    if not cursor.rowcount == 0:
+        row = cur.fetchone()
+        machineId = row[0] 
+    else: 
+        print "Please run setup for the machine first"
+        sys.exit(1)
 
-    machineId = row[0] 
-    con.close()
+    if con:
+        con.close()
 
     # Create a logger and dacapo object
     logger = wattsup.WattsUp(machineId)

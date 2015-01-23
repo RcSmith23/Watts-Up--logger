@@ -1,4 +1,5 @@
 #!/usr/bin/env python2.7
+# -*- coding: utf-8 -*-
 
 # This class will spawn a dacapo benchmark, and record it as
 # an instance in the database. 

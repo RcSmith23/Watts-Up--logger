@@ -1,4 +1,5 @@
 #!/usr/bin/env python2.7
+# -*- coding: utf-8 -*- 
 
 import os, serial
 import datetime, time
@@ -6,10 +7,11 @@ from platform import uname
 import numpy as np
 import psutil
 import threading
+import datetime
 import MySQLdb as mdb
 
 class WattsUp(object):
-    def __init__(self, port=None, interval=None):
+    def __init__(self, machineId, interval=None):
         if not port:
             port = '/dev/ttyUSB0'
         if os.path.isfile(port):
@@ -21,6 +23,7 @@ class WattsUp(object):
         self.interval = 1.0 if not interval else interval
         self.thread = None
         self.dbConnect = False
+        self.machineId = machineId
 
     # Checking to see if there is a thread logging already
     def logging(self):  
@@ -71,13 +74,16 @@ class WattsUp(object):
                     amperage = float(fields[5]) / 1000;
                     cpu = pustil.cpu_percent()
                     memory = psutil.virtual_memory().percent
-                    time = datetime.datetime.now()
+                    time = datetime.datetime.now().strftime("%Y-%m-%d \
+                    %H:%M:%S.%f")
                     
                     insertValues = """INSERT INTO recordings 
-                                        (watts, amps, volts, cpu_usage,
-                                        mem_usage, io_usage, machineId)
-                                        VALUES (?, ?, ?, ?, ?, ?, ?)""", \
-                                        (watts, amperage, voltage, cpu, memory, 0)
+                                        (time_stamp, watts, amps, volts, cpu_usage,
+                                        mem_usage, io_usage, machineId) VALUES 
+                                        ('%s', '%f', '%f', '%f', '%f', '%f',
+                                        '%f', '%d')""", \
+                                        (time, watts, amperage, voltage, cpu, \
+                                                memory, 0.0, self.machineId)
                     try:
                         cur.execute(insertValues)
                         con.commit()
