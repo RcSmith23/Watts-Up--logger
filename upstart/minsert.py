@@ -18,10 +18,10 @@ def main():
     machine = uname()[1]
     memory = psutil.virtual_memory()[0] / 1000000000
     machineInsert = """INSERT INTO machines (name, cores, memory) 
-                        SELECT * FROM (SELECT '%s', '%d', '%d') AS tmp
+                        SELECT '%s' FORM machines
                         WHERE NOT EXISTS (
-                            SELECT name FROM machines WHERE name = '%s'
-                        ) LIMIT 1;""" % (machine, cores, memory, machine)
+                            SELECT 1 FROM machines WHERE name = '%s'
+                        ) LIMIT 1;""" % (machine, cores, memory, machine, machine)
 
     try:
         con = mdb.connect(db_host, db_user, db_pass, db_name)
