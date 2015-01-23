@@ -18,7 +18,8 @@ def main():
     machine = uname()[1]
     memory = psutil.virtual_memory()[0] / 1000000000
     machineInsert = """INSERT INTO machines (name, cores, memory) 
-                        SELECT '%s' FROM machines
+                        SELECT '%s', '%d', '%d'
+                        FROM machines
                         WHERE NOT EXISTS (
                             SELECT 1 FROM machines WHERE name = '%s'
                         );""" % (machine, cores, memory, machine, machine)
